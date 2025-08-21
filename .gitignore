@@ -1,0 +1,96 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Virtual environments
+venv/
+env/
+ENV/
+.env
+.venv
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*_executed.ipynb
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Log files
+*.log
+
+# Backup files
+*.bak
+*.bak2
+*~
+
+# Data files that should not be tracked
+# Uncomment these if you don't want to track data files
+# data/
+# data/indexes/
+# data/chunks/
+# data/processed/
+# data/qa_pairs/
+# data/raw/
+# models/
+# models/rag/
+# models/fine_tuned/
+
+# Keep these commented if you want to track data files in git
+# If data files are large, consider using Git LFS instead
+
+# Temporary files
+*.tmp
+.temp/
+tmp/
+
+# Environment variables
+.env
+
+# Large files
+*.bin
+*.h5
+*.pkl
+*.pt
+*.pth
+*.onnx
+*.zip
+*.tar.gz
+
+# Generated files
+# Uncomment if you don't want to track evaluation results
+# evaluation_results/
+*_output.json
+*_results.json
+*_summary.md
+*_summary.txt
+
+# Test files
+test_*.py
+*_test.py
+
+# Utility scripts
+# Uncomment if you don't want to track utility scripts
+# run_*.py
+# update_*.py
+# fix_*.py
+
+# Documentation
+docs/_build/
+docs/api/
+
+# Coverage reports
+htmlcov/
+.coverage
+coverage.xml
+*.cover

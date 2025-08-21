@@ -1,9 +1,9 @@
 # Core dependencies
-pandas==2.2.0
-numpy==1.26.3
+pandas==1.5.3
+numpy==1.23.5
 scikit-learn==1.4.0
-matplotlib==3.8.2
-seaborn==0.13.1
+matplotlib==3.5.3
+seaborn==0.12.2
 
 # Data processing
 PyPDF2==3.0.1
@@ -21,7 +21,7 @@ whoosh==2.7.4
 rank_bm25==0.2.2
 
 # LLM and fine-tuning
-transformers==4.38.1
+transformers==4.36.2
 datasets==2.16.1
 torch==2.2.0
 accelerate==0.26.1

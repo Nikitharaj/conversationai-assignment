@@ -258,25 +258,27 @@ class EmbeddingManager:
 
             # Process dense results
             for rank, result in enumerate(dense_results):
-                chunk_idx = self.chunks.index(result["chunk"])
-                if chunk_idx not in all_results:
-                    all_results[chunk_idx] = {
+                # Use a more reliable way to identify chunks
+                chunk_id = id(result["chunk"])
+                if chunk_id not in all_results:
+                    all_results[chunk_id] = {
                         "chunk": result["chunk"],
                         "score": 0,
                         "method": "hybrid",
                     }
-                all_results[chunk_idx]["score"] += 1.0 / (rank + 1)
+                all_results[chunk_id]["score"] += 1.0 / (rank + 1)
 
             # Process sparse results
             for rank, result in enumerate(sparse_results):
-                chunk_idx = self.chunks.index(result["chunk"])
-                if chunk_idx not in all_results:
-                    all_results[chunk_idx] = {
+                # Use a more reliable way to identify chunks
+                chunk_id = id(result["chunk"])
+                if chunk_id not in all_results:
+                    all_results[chunk_id] = {
                         "chunk": result["chunk"],
                         "score": 0,
                         "method": "hybrid",
                     }
-                all_results[chunk_idx]["score"] += 1.0 / (rank + 1)
+                all_results[chunk_id]["score"] += 1.0 / (rank + 1)
 
             # Sort by score and return top k
             results = list(all_results.values())
@@ -290,16 +292,18 @@ class EmbeddingManager:
 
             # Add dense results first
             for result in dense_results:
-                chunk_idx = self.chunks.index(result["chunk"])
-                if chunk_idx not in seen_chunks:
-                    seen_chunks.add(chunk_idx)
+                # Use a more reliable way to identify chunks
+                chunk_id = id(result["chunk"])
+                if chunk_id not in seen_chunks:
+                    seen_chunks.add(chunk_id)
                     results.append(result)
 
             # Add sparse results if not already included
             for result in sparse_results:
-                chunk_idx = self.chunks.index(result["chunk"])
-                if chunk_idx not in seen_chunks and len(results) < top_k:
-                    seen_chunks.add(chunk_idx)
+                # Use a more reliable way to identify chunks
+                chunk_id = id(result["chunk"])
+                if chunk_id not in seen_chunks and len(results) < top_k:
+                    seen_chunks.add(chunk_id)
                     results.append(result)
 
             return results[:top_k]
