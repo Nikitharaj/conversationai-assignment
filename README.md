@@ -88,6 +88,7 @@ jupyter notebook notebooks/rag_system.ipynb
 ```
 
 Execute all cells to:
+
 - Chunk documents into smaller segments
 - Create embeddings and indexes
 - Test different retrieval methods
@@ -103,6 +104,7 @@ jupyter notebook notebooks/fine_tuning.ipynb
 ```
 
 Execute all cells to:
+
 - Load and analyze Q&A pairs
 - Initialize the fine-tuner
 - Evaluate the base model
@@ -119,6 +121,7 @@ jupyter notebook notebooks/evaluation.ipynb
 ```
 
 Execute all cells to:
+
 - Load both models
 - Evaluate on test set
 - Visualize evaluation results
@@ -137,13 +140,16 @@ This will start the Streamlit server and open the application in your default we
 ## Using the Streamlit Application
 
 1. **Upload Documents**:
+
    - Use the sidebar to upload financial documents (PDF, Excel, HTML, CSV)
    - The system will process the document and make it available for querying
 
 2. **Select Q&A System**:
+
    - Choose between RAG and Fine-Tuned systems using the radio buttons in the sidebar
 
 3. **Ask Questions**:
+
    - Type your financial question in the input field
    - View the answer, confidence score, and response time
    - For RAG system, you can toggle to show the retrieved context
