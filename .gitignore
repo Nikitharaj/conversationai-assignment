@@ -1,96 +1,91 @@
-# Python bytecode
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
-
-# Distribution / packaging
-dist/
+*.so
+.Python
 build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
 *.egg-info/
+.installed.cfg
+*.egg
 
-# Virtual environments
+# Virtual Environments
 venv/
 env/
 ENV/
 .env
 .venv
+env.bak/
+venv.bak/
+.conda/
+.python-version
 
 # Jupyter Notebook
 .ipynb_checkpoints
-*_executed.ipynb
+*/.ipynb_checkpoints/*
+*.ipynb_checkpoints*
+.jupyter/
 
-# IDE specific files
+# IDE
 .idea/
 .vscode/
 *.swp
 *.swo
 .DS_Store
 
-# Log files
-*.log
-
-# Backup files
-*.bak
-*.bak2
-*~
-
-# Data files that should not be tracked
-# Uncomment these if you don't want to track data files
-# data/
-# data/indexes/
-# data/chunks/
-# data/processed/
-# data/qa_pairs/
-# data/raw/
-# models/
-# models/rag/
-# models/fine_tuned/
-
-# Keep these commented if you want to track data files in git
-# If data files are large, consider using Git LFS instead
-
-# Temporary files
-*.tmp
-.temp/
-tmp/
-
-# Environment variables
-.env
-
-# Large files
-*.bin
-*.h5
+# Project specific
+data/raw/
+data/processed/
+data/chunks/
+models/
+logs/
+*.faiss
 *.pkl
+*.bin
 *.pt
-*.pth
+*.gguf
 *.onnx
-*.zip
-*.tar.gz
+*.safetensors
 
-# Generated files
-# Uncomment if you don't want to track evaluation results
-# evaluation_results/
-*_output.json
-*_results.json
-*_summary.md
-*_summary.txt
+# LangChain specific
+.langchain/
+.langchain.db
+.chroma/
+.vectorstore/
 
-# Test files
-test_*.py
-*_test.py
+# Streamlit
+.streamlit/
 
-# Utility scripts
-# Uncomment if you don't want to track utility scripts
-# run_*.py
-# update_*.py
-# fix_*.py
-
-# Documentation
-docs/_build/
-docs/api/
-
-# Coverage reports
-htmlcov/
+# Misc
 .coverage
+htmlcov/
+.pytest_cache/
+.tox/
+.nox/
+.hypothesis/
+.coverage.*
+.cache
+nosetests.xml
 coverage.xml
 *.cover
+.hypothesis/
+.pytest_cache/
+.mypy_cache/
+
+# Secrets
+.env
+.secrets
+*.pem
+*.key
+*.crt

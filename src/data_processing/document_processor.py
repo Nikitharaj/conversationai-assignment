@@ -55,6 +55,8 @@ class DocumentProcessor:
             return self._process_html(file_path)
         elif file_path.suffix.lower() == ".csv":
             return self._process_csv(file_path)
+        elif file_path.suffix.lower() == ".txt":
+            return self._process_text(file_path)
         else:
             raise ValueError(f"Unsupported file format: {file_path.suffix}")
 
@@ -189,6 +191,29 @@ class DocumentProcessor:
 
         return text
 
+    def _process_text(self, file_path: Path) -> str:
+        """
+        Process plain text files.
+
+        Args:
+            file_path: Path to the text file
+
+        Returns:
+            Cleaned text content
+        """
+        with open(file_path, "r", encoding="utf-8") as file:
+            text = file.read()
+
+        # Clean the text
+        cleaned_text = self._clean_text(text)
+
+        # Save processed text (might be the same as input if already clean)
+        output_file = self.output_dir / f"{file_path.stem}.txt"
+        with open(output_file, "w", encoding="utf-8") as f:
+            f.write(cleaned_text)
+
+        return cleaned_text
+
     def _clean_text(self, text: str) -> str:
         """
         Clean extracted text by removing headers, footers, page numbers, etc.
@@ -276,7 +301,7 @@ class DocumentProcessor:
             List of paths to processed text files
         """
         directory = Path(directory)
-        supported_extensions = [".pdf", ".xlsx", ".xls", ".html", ".csv"]
+        supported_extensions = [".pdf", ".xlsx", ".xls", ".html", ".csv", ".txt"]
         processed_files = []
 
         for file_path in directory.glob("**/*"):

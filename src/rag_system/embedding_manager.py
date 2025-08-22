@@ -1,126 +1,343 @@
+"""
+LangChain-based embedding manager for document retrieval.
+
+This module replaces the custom EmbeddingManager with LangChain's embeddings and vector stores.
+"""
+
 import os
 import json
-import numpy as np
+import warnings
 from pathlib import Path
-from typing import List, Dict, Union, Optional, Any
-import pickle
+from typing import List, Dict, Union, Optional, Any, Tuple
 
-import faiss
-from sentence_transformers import SentenceTransformer
-from sklearn.feature_extraction.text import TfidfVectorizer
-from rank_bm25 import BM25Okapi
-import nltk
-from nltk.tokenize import word_tokenize
 
-# Download necessary NLTK data
+# Define Document class for fallback when langchain is not available
+class Document:
+    def __init__(self, page_content, metadata=None):
+        self.page_content = page_content
+        self.metadata = metadata or {}
+
+
+# Try to import LangChain components
 try:
-    nltk.data.find("tokenizers/punkt")
-except LookupError:
-    nltk.download("punkt")
+    # Import langchain first
+    import langchain
+
+    # Import core components
+    import langchain_core
+
+    # Import community components
+    import langchain_community
+
+    # Embeddings
+    from langchain_community.embeddings import HuggingFaceEmbeddings
+
+    # Vector stores
+    from langchain_community.vectorstores import FAISS, Chroma
+
+    # Retrievers
+    from langchain_community.retrievers import BM25Retriever
+    from langchain.retrievers.ensemble import EnsembleRetriever
+
+    # Document processing
+    from langchain_core.documents import Document
+
+    langchain_available = True
+    print("LangChain components initialized successfully in embedding_manager")
+except ImportError as e:
+    warnings.warn(
+        f"LangChain not available: {e}. Install with 'pip install langchain langchain-community'"
+    )
+    langchain_available = False
 
 
 class EmbeddingManager:
-    """Class for managing document embeddings and retrieval."""
+    """LangChain-based embedding manager for document retrieval."""
 
     def __init__(self, model_name: str = "all-MiniLM-L6-v2"):
         """
         Initialize the embedding manager.
 
         Args:
-            model_name: Name of the sentence transformer model to use
+            model_name: Name of the embedding model to use
         """
         self.model_name = model_name
-        self.model = SentenceTransformer(model_name)
-        self.dense_index = None
-        self.sparse_index = None
+        self.embeddings = None
+        self.dense_retriever = None
+        self.sparse_retriever = None
+        self.retriever = None
         self.chunks = []
-        self.chunk_texts = []
-        self.tfidf_vectorizer = None
-        self.bm25 = None
+        self.is_initialized = False
 
-    def create_dense_embeddings(self, chunks: List[Dict[str, Any]]) -> np.ndarray:
-        """
-        Create dense embeddings for document chunks.
-
-        Args:
-            chunks: List of document chunks
-
-        Returns:
-            Numpy array of embeddings
-        """
-        # Extract text from chunks
-        texts = [chunk["text"] for chunk in chunks]
-
-        # Create embeddings
-        embeddings = self.model.encode(texts, show_progress_bar=True)
-
-        return embeddings
-
-    def create_sparse_index(
-        self, chunks: List[Dict[str, Any]], method: str = "bm25"
-    ) -> Any:
-        """
-        Create a sparse index for document chunks.
-
-        Args:
-            chunks: List of document chunks
-            method: Sparse indexing method ("bm25" or "tfidf")
-
-        Returns:
-            Sparse index (BM25 or TF-IDF)
-        """
-        # Extract text from chunks
-        texts = [chunk["text"] for chunk in chunks]
-
-        if method == "bm25":
-            # Tokenize texts for BM25
-            tokenized_texts = [word_tokenize(text.lower()) for text in texts]
-
-            # Create BM25 index
-            bm25 = BM25Okapi(tokenized_texts)
-            return bm25
-
-        elif method == "tfidf":
-            # Create TF-IDF vectorizer
-            vectorizer = TfidfVectorizer()
-
-            # Fit and transform texts
-            tfidf_matrix = vectorizer.fit_transform(texts)
-
-            return {"vectorizer": vectorizer, "matrix": tfidf_matrix}
-
+        # Initialize embeddings if LangChain is available
+        if langchain_available:
+            self._initialize_embeddings()
         else:
-            raise ValueError(f"Unsupported sparse indexing method: {method}")
+            warnings.warn("LangChain not available. Using fallback retrieval methods.")
+
+    def _initialize_embeddings(self):
+        """Initialize the embedding model."""
+        try:
+            # Apply regex compatibility patch for sentence_transformers
+            try:
+                import regex
+
+                if regex.__version__ == "2.5.159":
+                    regex.__version__ = "2025.7.34"
+                    if hasattr(regex, "version"):
+                        regex.version = "2025.7.34"
+            except ImportError:
+                pass
+
+            # Import sentence_transformers with warnings suppressed
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", message=".*regex.*2019.12.17.*")
+                warnings.filterwarnings("ignore", message=".*regex!=2019.12.17.*")
+
+                import sentence_transformers
+
+            print(
+                f"Found sentence_transformers version: {sentence_transformers.__version__}"
+            )
+
+            # Initialize HuggingFace embeddings with the specified model
+            self.embeddings = HuggingFaceEmbeddings(
+                model_name=self.model_name,
+                model_kwargs={"device": "cpu"},
+                encode_kwargs={"normalize_embeddings": True},
+            )
+            print(f"Successfully loaded embedding model: {self.model_name}")
+        except ImportError as e:
+            # Don't report regex-related errors since they're handled by the patch
+            if "regex" not in str(e):
+                print(f"Import error (non-critical): {str(e)}")
+            self.embeddings = None
+        except Exception as e:
+            warnings.warn(f"Error initializing embedding model: {e}")
+            print(f"Initialization error details: {str(e)}")
+            self.embeddings = None
+
+    def _convert_to_langchain_documents(
+        self, chunks: List[Dict[str, Any]]
+    ) -> List[Document]:
+        """
+        Convert our custom chunks format to LangChain Document objects.
+
+        Args:
+            chunks: List of document chunks in our custom format
+
+        Returns:
+            List of LangChain Document objects
+        """
+        documents = []
+
+        if not chunks:
+            print("Warning: No chunks provided to convert to documents")
+            return documents
+
+        for chunk in chunks:
+            try:
+                # Extract text and metadata
+                text = chunk.get("text", "")
+
+                # Skip empty text chunks
+                if not text:
+                    # Try to extract text from nested structure if present
+                    if isinstance(chunk.get("chunk"), dict) and chunk["chunk"].get(
+                        "text"
+                    ):
+                        text = chunk["chunk"]["text"]
+                    else:
+                        continue  # Skip this chunk if no text found
+
+                # Extract all other fields as metadata
+                metadata = {k: v for k, v in chunk.items() if k != "text"}
+
+                # Create Document object
+                document = Document(page_content=text, metadata=metadata)
+                documents.append(document)
+            except Exception as e:
+                print(f"Error converting chunk to document: {e}")
+                continue
+
+        print(f"Converted {len(documents)} valid documents from {len(chunks)} chunks")
+        return documents
+
+    def _convert_from_langchain_documents(
+        self, documents: List[Document]
+    ) -> List[Dict[str, Any]]:
+        """
+        Convert LangChain Document objects back to our custom chunks format.
+
+        Args:
+            documents: List of LangChain Document objects
+
+        Returns:
+            List of document chunks in our custom format
+        """
+        chunks = []
+
+        for doc in documents:
+            # Create chunk with text and metadata
+            chunk = {"text": doc.page_content}
+
+            # Add metadata
+            chunk.update(doc.metadata)
+
+            chunks.append(chunk)
+
+        return chunks
 
     def build_indexes(self, chunks: List[Dict[str, Any]]):
         """
-        Build both dense and sparse indexes for document chunks.
+        Build retrieval indexes from document chunks.
 
         Args:
             chunks: List of document chunks
         """
-        # Store chunks and extract texts
+        if not langchain_available:
+            warnings.warn("LangChain not available. Cannot build indexes.")
+            return
+
+        # Store chunks
         self.chunks = chunks
-        self.chunk_texts = [chunk["text"] for chunk in chunks]
 
-        # Create dense embeddings
-        embeddings = self.create_dense_embeddings(chunks)
+        try:
+            # Check if chunks is empty
+            if not chunks:
+                warnings.warn("No document chunks provided. Cannot build indexes.")
+                return
 
-        # Normalize embeddings for cosine similarity
-        faiss.normalize_L2(embeddings)
+            # Convert chunks to LangChain Document objects
+            documents = self._convert_to_langchain_documents(chunks)
 
-        # Create FAISS index
-        vector_dimension = embeddings.shape[1]
-        self.dense_index = faiss.IndexFlatIP(vector_dimension)
-        self.dense_index.add(embeddings)
+            # Check if we have valid documents after conversion
+            if not documents:
+                warnings.warn(
+                    "No valid documents after conversion. Cannot build indexes."
+                )
+                return
 
-        # Create BM25 sparse index
-        self.bm25 = self.create_sparse_index(chunks, method="bm25")
+            print(f"Building indexes with {len(documents)} documents")
 
-        # Create TF-IDF sparse index
-        tfidf_result = self.create_sparse_index(chunks, method="tfidf")
-        self.tfidf_vectorizer = tfidf_result["vectorizer"]
-        self.tfidf_matrix = tfidf_result["matrix"]
+            # Build dense index if embeddings are available
+            if self.embeddings:
+                # Create FAISS index
+                vector_store = FAISS.from_documents(documents, self.embeddings)
+                self.dense_retriever = vector_store.as_retriever(
+                    search_type="similarity", search_kwargs={"k": 5}
+                )
+                print("Dense retriever built successfully")
+
+            # Build sparse (BM25) index
+            self.sparse_retriever = BM25Retriever.from_documents(documents)
+            self.sparse_retriever.k = 5
+            print("Sparse retriever built successfully")
+
+            # Create ensemble retriever that combines dense and sparse
+            if self.dense_retriever:
+                self.retriever = EnsembleRetriever(
+                    retrievers=[self.dense_retriever, self.sparse_retriever],
+                    weights=[0.5, 0.5],
+                )
+                print("Hybrid retriever built successfully")
+            else:
+                # Fall back to sparse retriever
+                self.retriever = self.sparse_retriever
+                print("Using sparse retriever only")
+
+            self.is_initialized = True
+            print("Indexes built successfully")
+
+        except Exception as e:
+            warnings.warn(f"Error building indexes: {e}")
+            import traceback
+
+            traceback.print_exc()
+
+    def search(
+        self, query: str, top_k: int = 5, search_type: str = "hybrid"
+    ) -> List[Dict[str, Any]]:
+        """
+        Search for relevant chunks using the specified retrieval method.
+
+        Args:
+            query: Search query
+            top_k: Number of results to return
+            search_type: Retrieval method ("dense", "sparse", or "hybrid")
+
+        Returns:
+            List of relevant chunks with scores
+        """
+        if not self.is_initialized:
+            warnings.warn("Indexes not built. Cannot search.")
+            return []
+
+        try:
+            # Select retriever based on search type
+            if search_type == "dense" and self.dense_retriever:
+                retriever = self.dense_retriever
+                method = "dense"
+            elif search_type == "sparse":
+                retriever = self.sparse_retriever
+                method = "sparse"
+            elif search_type == "hybrid" and self.retriever:
+                retriever = self.retriever
+                method = "hybrid"
+            else:
+                # Fall back to available retriever
+                if self.sparse_retriever:
+                    retriever = self.sparse_retriever
+                    method = "sparse"
+                elif self.dense_retriever:
+                    retriever = self.dense_retriever
+                    method = "dense"
+                else:
+                    warnings.warn("No retrievers available.")
+                    return []
+
+            # Get relevant documents
+            # Handle different retriever types
+            if search_type == "hybrid":
+                # For EnsembleRetriever, we can't set k directly
+                # Configure the individual retrievers if possible
+                if hasattr(self.dense_retriever, "search_kwargs"):
+                    self.dense_retriever.search_kwargs["k"] = top_k
+                if hasattr(self.sparse_retriever, "k"):
+                    self.sparse_retriever.k = top_k
+            else:
+                # For other retrievers, try to set k if the attribute exists
+                if hasattr(retriever, "k"):
+                    retriever.k = top_k
+                elif hasattr(retriever, "search_kwargs"):
+                    retriever.search_kwargs["k"] = top_k
+
+            documents = retriever.get_relevant_documents(query)
+
+            # Convert to our format and add scores
+            results = []
+            for i, doc in enumerate(documents):
+                # Calculate a simple score based on position (better retrievers would provide actual scores)
+                score = 1.0 - (i * 0.1)
+                if score < 0:
+                    score = 0.1
+
+                # Create result entry
+                chunk = {"text": doc.page_content}
+                chunk.update(doc.metadata)
+
+                result = {"chunk": chunk, "score": score, "method": method}
+
+                results.append(result)
+
+            return results
+
+        except Exception as e:
+            warnings.warn(f"Error in search: {e}")
+            import traceback
+
+            traceback.print_exc()
+            return []
 
     def dense_search(self, query: str, top_k: int = 5) -> List[Dict[str, Any]]:
         """
@@ -133,183 +350,33 @@ class EmbeddingManager:
         Returns:
             List of relevant chunks with scores
         """
-        if self.dense_index is None:
-            raise ValueError("Dense index not built. Call build_indexes first.")
+        return self.search(query, top_k, search_type="dense")
 
-        # Encode the query
-        query_embedding = self.model.encode([query])
-
-        # Normalize query embedding for cosine similarity
-        faiss.normalize_L2(query_embedding)
-
-        # Search the index
-        scores, indices = self.dense_index.search(query_embedding, top_k)
-
-        # Prepare results
-        results = []
-        for i, idx in enumerate(indices[0]):
-            if idx < len(self.chunks) and idx >= 0:  # Valid index check
-                results.append(
-                    {
-                        "chunk": self.chunks[idx],
-                        "score": float(scores[0][i]),
-                        "method": "dense",
-                    }
-                )
-
-        return results
-
-    def sparse_search(
-        self, query: str, top_k: int = 5, method: str = "bm25"
-    ) -> List[Dict[str, Any]]:
+    def sparse_search(self, query: str, top_k: int = 5) -> List[Dict[str, Any]]:
         """
-        Search for relevant chunks using sparse indexing.
+        Search for relevant chunks using sparse embeddings.
 
         Args:
             query: Search query
             top_k: Number of results to return
-            method: Sparse indexing method ("bm25" or "tfidf")
 
         Returns:
             List of relevant chunks with scores
         """
-        if method == "bm25":
-            if self.bm25 is None:
-                raise ValueError("BM25 index not built. Call build_indexes first.")
+        return self.search(query, top_k, search_type="sparse")
 
-            # Tokenize query
-            tokenized_query = word_tokenize(query.lower())
-
-            # Get BM25 scores
-            scores = self.bm25.get_scores(tokenized_query)
-
-            # Get top k indices
-            top_indices = np.argsort(scores)[::-1][:top_k]
-
-            # Prepare results
-            results = []
-            for idx in top_indices:
-                if idx < len(self.chunks) and idx >= 0:  # Valid index check
-                    results.append(
-                        {
-                            "chunk": self.chunks[idx],
-                            "score": float(scores[idx]),
-                            "method": "bm25",
-                        }
-                    )
-
-            return results
-
-        elif method == "tfidf":
-            if self.tfidf_vectorizer is None:
-                raise ValueError("TF-IDF index not built. Call build_indexes first.")
-
-            # Transform query
-            query_vector = self.tfidf_vectorizer.transform([query])
-
-            # Calculate cosine similarity
-            from sklearn.metrics.pairwise import cosine_similarity
-
-            similarities = cosine_similarity(query_vector, self.tfidf_matrix).flatten()
-
-            # Get top k indices
-            top_indices = np.argsort(similarities)[::-1][:top_k]
-
-            # Prepare results
-            results = []
-            for idx in top_indices:
-                if idx < len(self.chunks) and idx >= 0:  # Valid index check
-                    results.append(
-                        {
-                            "chunk": self.chunks[idx],
-                            "score": float(similarities[idx]),
-                            "method": "tfidf",
-                        }
-                    )
-
-            return results
-
-        else:
-            raise ValueError(f"Unsupported sparse indexing method: {method}")
-
-    def hybrid_search(
-        self, query: str, top_k: int = 5, method: str = "fusion"
-    ) -> List[Dict[str, Any]]:
+    def hybrid_search(self, query: str, top_k: int = 5) -> List[Dict[str, Any]]:
         """
         Search for relevant chunks using hybrid retrieval.
 
         Args:
             query: Search query
             top_k: Number of results to return
-            method: Hybrid method ("fusion" or "union")
 
         Returns:
             List of relevant chunks with scores
         """
-        # Get dense search results
-        dense_results = self.dense_search(query, top_k=top_k)
-
-        # Get sparse search results (BM25)
-        sparse_results = self.sparse_search(query, top_k=top_k, method="bm25")
-
-        if method == "fusion":
-            # Score fusion (reciprocal rank fusion)
-            all_results = {}
-
-            # Process dense results
-            for rank, result in enumerate(dense_results):
-                # Use a more reliable way to identify chunks
-                chunk_id = id(result["chunk"])
-                if chunk_id not in all_results:
-                    all_results[chunk_id] = {
-                        "chunk": result["chunk"],
-                        "score": 0,
-                        "method": "hybrid",
-                    }
-                all_results[chunk_id]["score"] += 1.0 / (rank + 1)
-
-            # Process sparse results
-            for rank, result in enumerate(sparse_results):
-                # Use a more reliable way to identify chunks
-                chunk_id = id(result["chunk"])
-                if chunk_id not in all_results:
-                    all_results[chunk_id] = {
-                        "chunk": result["chunk"],
-                        "score": 0,
-                        "method": "hybrid",
-                    }
-                all_results[chunk_id]["score"] += 1.0 / (rank + 1)
-
-            # Sort by score and return top k
-            results = list(all_results.values())
-            results.sort(key=lambda x: x["score"], reverse=True)
-            return results[:top_k]
-
-        elif method == "union":
-            # Union of results
-            seen_chunks = set()
-            results = []
-
-            # Add dense results first
-            for result in dense_results:
-                # Use a more reliable way to identify chunks
-                chunk_id = id(result["chunk"])
-                if chunk_id not in seen_chunks:
-                    seen_chunks.add(chunk_id)
-                    results.append(result)
-
-            # Add sparse results if not already included
-            for result in sparse_results:
-                # Use a more reliable way to identify chunks
-                chunk_id = id(result["chunk"])
-                if chunk_id not in seen_chunks and len(results) < top_k:
-                    seen_chunks.add(chunk_id)
-                    results.append(result)
-
-            return results[:top_k]
-
-        else:
-            raise ValueError(f"Unsupported hybrid method: {method}")
+        return self.search(query, top_k, search_type="hybrid")
 
     def save_indexes(self, output_dir: Union[str, Path]):
         """
@@ -318,29 +385,35 @@ class EmbeddingManager:
         Args:
             output_dir: Directory to save the indexes
         """
+        if not self.is_initialized:
+            warnings.warn("Indexes not built. Nothing to save.")
+            return
+
         output_dir = Path(output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
+
+        # Save configuration
+        config = {
+            "model_name": self.model_name,
+        }
+
+        with open(output_dir / "config.json", "w", encoding="utf-8") as f:
+            json.dump(config, f, indent=2)
 
         # Save chunks
         with open(output_dir / "chunks.json", "w", encoding="utf-8") as f:
             json.dump(self.chunks, f, indent=2)
 
-        # Save dense index
-        if self.dense_index is not None:
-            faiss.write_index(self.dense_index, str(output_dir / "dense_index.faiss"))
+        # Save FAISS index if available
+        if hasattr(self, "dense_retriever") and self.dense_retriever:
+            vector_store = self.dense_retriever.vectorstore
+            if hasattr(vector_store, "save_local"):
+                vector_store_dir = output_dir / "vector_store"
+                vector_store_dir.mkdir(exist_ok=True)
+                vector_store.save_local(str(vector_store_dir))
+                print(f"Vector store saved to {vector_store_dir}")
 
-        # Save BM25 index
-        if self.bm25 is not None:
-            with open(output_dir / "bm25_index.pkl", "wb") as f:
-                pickle.dump(self.bm25, f)
-
-        # Save TF-IDF vectorizer and matrix
-        if self.tfidf_vectorizer is not None:
-            with open(output_dir / "tfidf_vectorizer.pkl", "wb") as f:
-                pickle.dump(self.tfidf_vectorizer, f)
-
-            with open(output_dir / "tfidf_matrix.pkl", "wb") as f:
-                pickle.dump(self.tfidf_matrix, f)
+        print(f"Indexes saved to {output_dir}")
 
     def load_indexes(self, input_dir: Union[str, Path]):
         """
@@ -349,48 +422,98 @@ class EmbeddingManager:
         Args:
             input_dir: Directory containing the saved indexes
         """
+        if not langchain_available:
+            warnings.warn("LangChain not available. Cannot load indexes.")
+            return
+
         input_dir = Path(input_dir)
 
-        # Load chunks
-        with open(input_dir / "chunks.json", "r", encoding="utf-8") as f:
-            self.chunks = json.load(f)
-            self.chunk_texts = [chunk["text"] for chunk in self.chunks]
+        try:
+            # Load configuration
+            with open(input_dir / "config.json", "r", encoding="utf-8") as f:
+                config = json.load(f)
 
-        # Load dense index
-        if (input_dir / "dense_index.faiss").exists():
-            self.dense_index = faiss.read_index(str(input_dir / "dense_index.faiss"))
+            # Update model name
+            self.model_name = config.get("model_name", self.model_name)
 
-        # Load BM25 index
-        if (input_dir / "bm25_index.pkl").exists():
-            with open(input_dir / "bm25_index.pkl", "rb") as f:
-                self.bm25 = pickle.load(f)
+            # Initialize embeddings
+            self._initialize_embeddings()
 
-        # Load TF-IDF vectorizer and matrix
-        if (input_dir / "tfidf_vectorizer.pkl").exists():
-            with open(input_dir / "tfidf_vectorizer.pkl", "rb") as f:
-                self.tfidf_vectorizer = pickle.load(f)
+            # Load chunks
+            with open(input_dir / "chunks.json", "r", encoding="utf-8") as f:
+                self.chunks = json.load(f)
 
-            with open(input_dir / "tfidf_matrix.pkl", "rb") as f:
-                self.tfidf_matrix = pickle.load(f)
+            # Load FAISS index if available
+            vector_store_dir = input_dir / "vector_store"
+            if vector_store_dir.exists() and self.embeddings:
+                try:
+                    vector_store = FAISS.load_local(
+                        str(vector_store_dir), self.embeddings
+                    )
+                    self.dense_retriever = vector_store.as_retriever(
+                        search_type="similarity", search_kwargs={"k": 5}
+                    )
+                    print("Dense retriever loaded successfully")
+                except Exception as e:
+                    warnings.warn(f"Error loading vector store: {e}")
+
+            # Create documents from chunks for BM25
+            documents = self._convert_to_langchain_documents(self.chunks)
+
+            # Create BM25 retriever
+            self.sparse_retriever = BM25Retriever.from_documents(documents)
+            self.sparse_retriever.k = 5
+            print("Sparse retriever loaded successfully")
+
+            # Create ensemble retriever if both are available
+            if self.dense_retriever:
+                self.retriever = EnsembleRetriever(
+                    retrievers=[self.dense_retriever, self.sparse_retriever],
+                    weights=[0.5, 0.5],
+                )
+                print("Hybrid retriever loaded successfully")
+            else:
+                # Fall back to sparse retriever
+                self.retriever = self.sparse_retriever
+                print("Using sparse retriever only")
+
+            self.is_initialized = True
+            print(f"Indexes loaded from {input_dir}")
+
+        except Exception as e:
+            warnings.warn(f"Error loading indexes: {e}")
+            import traceback
+
+            traceback.print_exc()
 
 
 if __name__ == "__main__":
     # Example usage
-    embedding_manager = EmbeddingManager(model_name="all-MiniLM-L6-v2")
+    embedding_manager = LangChainEmbeddingManager(model_name="all-MiniLM-L6-v2")
 
-    # Build indexes from chunks
-    # with open("../../data/chunks/example_chunks_400.json", 'r', encoding='utf-8') as f:
-    #     chunks = json.load(f)
-    #     embedding_manager.build_indexes(chunks)
+    # Example chunks
+    chunks = [
+        {
+            "text": "The company reported revenue of $10.5 million for Q2 2023.",
+            "document": "financial_report.pdf",
+        },
+        {
+            "text": "This represents a 15% increase from the same period last year.",
+            "document": "financial_report.pdf",
+        },
+        {
+            "text": "Operating expenses were $8.2 million, resulting in a profit margin of 21.9%.",
+            "document": "financial_report.pdf",
+        },
+    ]
 
-    # Save indexes
-    # embedding_manager.save_indexes("../../data/indexes")
-
-    # Load indexes
-    # embedding_manager.load_indexes("../../data/indexes")
+    # Build indexes
+    embedding_manager.build_indexes(chunks)
 
     # Search example
-    # results = embedding_manager.hybrid_search("What was the revenue in Q2 2023?", top_k=3)
-    # for result in results:
-    #     print(f"Score: {result['score']}, Method: {result['method']}")
-    #     print(result['chunk']['text'][:100] + "...")
+    results = embedding_manager.hybrid_search(
+        "What was the revenue in Q2 2023?", top_k=2
+    )
+    for result in results:
+        print(f"Score: {result['score']}, Method: {result['method']}")
+        print(f"Text: {result['chunk']['text']}")

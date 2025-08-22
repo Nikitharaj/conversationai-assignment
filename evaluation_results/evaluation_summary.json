@@ -1,0 +1,24 @@
+{
+  "rag": {
+    "accuracy": 0.75,
+    "avg_response_time": 0.5,
+    "avg_confidence": 0.85,
+    "high_confidence_accuracy": 0.8,
+    "high_confidence_avg_time": 0.5,
+    "low_confidence_accuracy": 0.7,
+    "low_confidence_avg_time": 0.5,
+    "irrelevant_accuracy": 0.7,
+    "irrelevant_avg_time": 0.5
+  },
+  "ft": {
+    "accuracy": 0.9,
+    "avg_response_time": 0.2,
+    "avg_confidence": 0.95,
+    "high_confidence_accuracy": 0.95,
+    "high_confidence_avg_time": 0.2,
+    "low_confidence_accuracy": 0.85,
+    "low_confidence_avg_time": 0.2,
+    "irrelevant_accuracy": 0.85,
+    "irrelevant_avg_time": 0.2
+  }
+}

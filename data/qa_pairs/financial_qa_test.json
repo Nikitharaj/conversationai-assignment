@@ -1,0 +1,57 @@
+[
+  {
+    "question": "How did iPhone sales perform in 2023?",
+    "answer": "iPhone revenue was $200.6 billion in fiscal 2023, representing 52% of total revenue.",
+    "source": "manual_apple"
+  },
+  {
+    "question": "What was Apple's accounts receivable in 2023?",
+    "answer": "Apple's accounts receivable reflects its strong customer payment terms and business relationships.",
+    "source": "manual_apple"
+  },
+  {
+    "question": "What was Apple's Services revenue growth in 2023?",
+    "answer": "Apple's Services revenue grew to $85.2 billion in fiscal 2023, up 8.2% year-over-year.",
+    "source": "manual_apple"
+  },
+  {
+    "question": "What was Apple's net income in fiscal 2023?",
+    "answer": "Apple reported net income of $97.0 billion for fiscal year 2023.",
+    "source": "manual_apple"
+  },
+  {
+    "question": "What was the Mac revenue performance in 2023?",
+    "answer": "Mac revenue was $29.4 billion in fiscal 2023, down 27% compared to the previous year.",
+    "source": "manual_apple"
+  },
+  {
+    "question": "How did iPad sales perform in fiscal 2023?",
+    "answer": "iPad revenue was $28.3 billion in fiscal 2023, down 3% year-over-year.",
+    "source": "manual_apple"
+  },
+  {
+    "question": "What was Apple's effective tax rate in fiscal 2023?",
+    "answer": "Apple's effective tax rate was approximately 14.7% for fiscal year 2023.",
+    "source": "manual_apple"
+  },
+  {
+    "question": "What was Apple's average selling price for iPhone in 2023?",
+    "answer": "iPhone maintained strong average selling prices despite competitive pressures, reflecting premium positioning.",
+    "source": "manual_apple"
+  },
+  {
+    "question": "What was the net income/profit reported?",
+    "answer": "The net income/profit was $187.5.",
+    "source": "profit_pattern"
+  },
+  {
+    "question": "What are Apple's main revenue segments?",
+    "answer": "Apple's main revenue segments are iPhone, Services, Mac, iPad, and Wearables, Home and Accessories.",
+    "source": "manual_apple"
+  },
+  {
+    "question": "What was Apple's EBITDA in fiscal 2023?",
+    "answer": "Apple's strong operational performance generated substantial EBITDA of over $130 billion in fiscal 2023.",
+    "source": "manual_apple"
+  }
+]

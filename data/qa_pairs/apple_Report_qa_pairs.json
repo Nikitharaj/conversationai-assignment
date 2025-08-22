@@ -1,0 +1,72 @@
+[
+  {
+    "question": "What was the revenue reported in the financial statement?",
+    "answer": "The revenue was $12.8.",
+    "source": "revenue_pattern"
+  },
+  {
+    "question": "What period does this financial statement cover?",
+    "answer": "The financial statement covers the period ending September\u00a028, 2024.",
+    "source": "date_pattern"
+  },
+  {
+    "question": "What period does this financial statement cover?",
+    "answer": "The financial statement covers the period ending September\u00a028, 2024.",
+    "source": "date_pattern"
+  },
+  {
+    "question": "What period does this financial statement cover?",
+    "answer": "The financial statement covers the period ending September\u00a030, 2023.",
+    "source": "date_pattern"
+  },
+  {
+    "question": "What period does this financial statement cover?",
+    "answer": "The financial statement covers the period ending September\u00a028, 2024.",
+    "source": "date_pattern"
+  },
+  {
+    "question": "What period does this financial statement cover?",
+    "answer": "The financial statement covers the period ending September\u00a028, 2024.",
+    "source": "date_pattern"
+  },
+  {
+    "question": "What period does this financial statement cover?",
+    "answer": "The financial statement covers the period ending 2024.",
+    "source": "date_pattern"
+  },
+  {
+    "question": "What period does this financial statement cover?",
+    "answer": "The financial statement covers the period ending 2024.",
+    "source": "date_pattern"
+  },
+  {
+    "question": "What period does this financial statement cover?",
+    "answer": "The financial statement covers the period ending 2023.",
+    "source": "date_pattern"
+  },
+  {
+    "question": "What period does this financial statement cover?",
+    "answer": "The financial statement covers the period ending 2026.",
+    "source": "date_pattern"
+  },
+  {
+    "question": "What period does this financial statement cover?",
+    "answer": "The financial statement covers the period ending 2025.",
+    "source": "date_pattern"
+  },
+  {
+    "question": "What period does this financial statement cover?",
+    "answer": "The financial statement covers the period ending 2024.",
+    "source": "date_pattern"
+  },
+  {
+    "question": "What period does this financial statement cover?",
+    "answer": "The financial statement covers the period ending 2022.",
+    "source": "date_pattern"
+  },
+  {
+    "question": "What period does this financial statement cover?",
+    "answer": "The financial statement covers the period ending 2024.",
+    "source": "date_pattern"
+  }
+]

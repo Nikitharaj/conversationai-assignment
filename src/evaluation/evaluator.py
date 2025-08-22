@@ -1,6 +1,13 @@
+"""
+LangChain-based evaluator for comparing RAG and Fine-Tuned models.
+
+This module provides evaluation metrics for comparing RAG and Fine-Tuned models.
+"""
+
 import os
 import json
 import time
+import warnings
 from pathlib import Path
 from typing import List, Dict, Union, Optional, Any, Tuple
 import pandas as pd
@@ -8,329 +15,455 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from ..rag_system.rag_system import RAGSystem
-from ..fine_tuning.ft_model import FineTunedModel
+# Try to import LangChain components
+try:
+    from langchain.evaluation import EvaluatorType
+    from langchain.evaluation.schema import StringEvaluator
+    from langchain_community.evaluation import (
+        ExactMatchStringEvaluator,
+        QAEvalChain,
+        PairwiseStringEvaluator,
+        load_evaluator,
+    )
+    from langchain_core.language_models import BaseLanguageModel
+    from langchain_openai import ChatOpenAI
+
+    langchain_available = True
+except ImportError:
+    # Only warn if this is not being imported during test execution
+    import sys
+
+    if not any("pytest" in arg for arg in sys.argv) and not any(
+        "unittest" in arg for arg in sys.argv
+    ):
+        warnings.warn(
+            "LangChain evaluation not available. Install with 'pip install langchain langchain-community langchain-openai'"
+        )
+    langchain_available = False
+
 
 class Evaluator:
-    """Class for evaluating and comparing RAG and Fine-Tuned models."""
-    
+    """LangChain-based evaluator for comparing RAG and Fine-Tuned models."""
+
     def __init__(
         self,
-        rag_system: RAGSystem,
-        ft_model: FineTunedModel,
-        output_dir: Union[str, Path] = "evaluation_results"
+        rag_system: Any = None,
+        ft_model: Any = None,
+        output_dir: Union[str, Path] = "./evaluation_results",
     ):
         """
         Initialize the evaluator.
-        
+
         Args:
-            rag_system: Initialized RAG system
-            ft_model: Initialized Fine-Tuned model
+            rag_system: RAG system instance
+            ft_model: Fine-tuned model instance
             output_dir: Directory to save evaluation results
         """
         self.rag_system = rag_system
         self.ft_model = ft_model
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
-        
-        # Evaluation results
-        self.results = {
-            "rag": [],
-            "ft": []
-        }
-    
+
+        # Initialize evaluators if LangChain is available
+        self.exact_match_evaluator = None
+        self.embedding_evaluator = None
+        self.qa_eval_chain = None
+
+        if langchain_available:
+            try:
+                # Initialize exact match evaluator
+                self.exact_match_evaluator = ExactMatchStringEvaluator()
+
+                # Initialize embedding evaluator
+                self.embedding_evaluator = load_evaluator(
+                    EvaluatorType.EMBEDDING_DISTANCE
+                )
+
+                # Initialize QA evaluator (requires OpenAI API key)
+                if os.environ.get("OPENAI_API_KEY"):
+                    self.qa_eval_chain = QAEvalChain.from_llm(
+                        llm=ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo")
+                    )
+            except Exception as e:
+                warnings.warn(f"Error initializing evaluators: {e}")
+
     def evaluate_test_set(self, test_file: Union[str, Path]):
         """
-        Evaluate both systems on a test set of Q&A pairs.
-        
+        Evaluate both models on a test set of Q&A pairs.
+
         Args:
-            test_file: Path to a JSON file containing test Q&A pairs
+            test_file: Path to the test file (JSON format)
         """
         test_file = Path(test_file)
-        
-        # Load test Q&A pairs
-        with open(test_file, 'r', encoding='utf-8') as f:
-            test_pairs = json.load(f)
-        
-        # Evaluate each test pair
-        for i, pair in enumerate(test_pairs):
-            print(f"Evaluating question {i+1}/{len(test_pairs)}: {pair['question']}")
-            
-            # Evaluate RAG system
-            rag_result = self.rag_system.process_query(pair["question"])
-            
-            # Evaluate Fine-Tuned model
-            ft_result = self.ft_model.process_query(pair["question"])
-            
-            # Calculate accuracy (simple string similarity)
-            from difflib import SequenceMatcher
-            
-            rag_similarity = SequenceMatcher(None, rag_result["answer"].lower(), pair["answer"].lower()).ratio()
-            ft_similarity = SequenceMatcher(None, ft_result["answer"].lower(), pair["answer"].lower()).ratio()
-            
-            rag_is_correct = rag_similarity > 0.5
-            ft_is_correct = ft_similarity > 0.5
-            
-            # Store results
-            self.results["rag"].append({
-                "question": pair["question"],
-                "ground_truth": pair["answer"],
-                "answer": rag_result["answer"],
-                "confidence": rag_result["confidence"],
-                "response_time": rag_result["response_time"],
-                "similarity": rag_similarity,
-                "is_correct": rag_is_correct
-            })
-            
-            self.results["ft"].append({
-                "question": pair["question"],
-                "ground_truth": pair["answer"],
-                "answer": ft_result["answer"],
-                "confidence": ft_result["confidence"],
-                "response_time": ft_result["response_time"],
-                "similarity": ft_similarity,
-                "is_correct": ft_is_correct
-            })
-        
+        if not test_file.exists():
+            raise FileNotFoundError(f"Test file not found: {test_file}")
+
+        # Load test data
+        with open(test_file, "r", encoding="utf-8") as f:
+            test_data = json.load(f)
+
+        # Initialize results
+        rag_results = []
+        ft_results = []
+
+        # Process each test example
+        for i, example in enumerate(test_data):
+            question = example["question"]
+            ground_truth = example["answer"]
+            question_type = example.get("type", "general")
+
+            print(f"Processing example {i + 1}/{len(test_data)}: {question}")
+
+            # RAG model
+            if self.rag_system:
+                try:
+                    rag_result = self.rag_system.process_query(question)
+                    rag_answer = rag_result["answer"]
+                    rag_confidence = rag_result["confidence"]
+                    rag_response_time = rag_result["response_time"]
+
+                    # Evaluate correctness
+                    is_correct = self._evaluate_answer(
+                        rag_answer, ground_truth, question
+                    )
+
+                    # Store result
+                    rag_results.append(
+                        {
+                            "question": question,
+                            "answer": rag_answer,
+                            "ground_truth": ground_truth,
+                            "is_correct": is_correct,
+                            "confidence": rag_confidence,
+                            "response_time": rag_response_time,
+                            "question_type": question_type,
+                        }
+                    )
+                except Exception as e:
+                    print(f"Error with RAG system: {e}")
+
+            # Fine-tuned model
+            if self.ft_model:
+                try:
+                    ft_result = self.ft_model.process_query(question)
+                    ft_answer = ft_result["answer"]
+                    ft_confidence = ft_result["confidence"]
+                    ft_response_time = ft_result["response_time"]
+
+                    # Evaluate correctness
+                    is_correct = self._evaluate_answer(
+                        ft_answer, ground_truth, question
+                    )
+
+                    # Store result
+                    ft_results.append(
+                        {
+                            "question": question,
+                            "answer": ft_answer,
+                            "ground_truth": ground_truth,
+                            "is_correct": is_correct,
+                            "confidence": ft_confidence,
+                            "response_time": ft_response_time,
+                            "question_type": question_type,
+                        }
+                    )
+                except Exception as e:
+                    print(f"Error with Fine-Tuned model: {e}")
+
+        # Calculate summary statistics
+        rag_summary = self._calculate_summary(rag_results)
+        ft_summary = self._calculate_summary(ft_results)
+
         # Save results
-        with open(self.output_dir / "evaluation_results.json", 'w', encoding='utf-8') as f:
-            json.dump(self.results, f, indent=2)
-        
-        # Generate summary
-        self._generate_summary()
-    
-    def evaluate_official_questions(self, questions: List[Dict[str, str]]):
-        """
-        Evaluate both systems on the official evaluation questions.
-        
-        Args:
-            questions: List of dictionaries containing questions and ground truth answers
-        """
-        # Evaluate each question
-        for i, q_data in enumerate(questions):
-            question = q_data["question"]
-            ground_truth = q_data["answer"]
-            question_type = q_data["type"]  # "high_confidence", "low_confidence", or "irrelevant"
-            
-            print(f"Evaluating official question {i+1}/{len(questions)}: {question}")
-            
-            # Evaluate RAG system
-            rag_result = self.rag_system.process_query(question)
-            
-            # Evaluate Fine-Tuned model
-            ft_result = self.ft_model.process_query(question)
-            
-            # Calculate accuracy (simple string similarity)
-            from difflib import SequenceMatcher
-            
-            rag_similarity = SequenceMatcher(None, rag_result["answer"].lower(), ground_truth.lower()).ratio()
-            ft_similarity = SequenceMatcher(None, ft_result["answer"].lower(), ground_truth.lower()).ratio()
-            
-            rag_is_correct = rag_similarity > 0.5
-            ft_is_correct = ft_similarity > 0.5
-            
-            # Store results
-            self.results["rag"].append({
-                "question": question,
-                "ground_truth": ground_truth,
-                "answer": rag_result["answer"],
-                "confidence": rag_result["confidence"],
-                "response_time": rag_result["response_time"],
-                "similarity": rag_similarity,
-                "is_correct": rag_is_correct,
-                "question_type": question_type
-            })
-            
-            self.results["ft"].append({
-                "question": question,
-                "ground_truth": ground_truth,
-                "answer": ft_result["answer"],
-                "confidence": ft_result["confidence"],
-                "response_time": ft_result["response_time"],
-                "similarity": ft_similarity,
-                "is_correct": ft_is_correct,
-                "question_type": question_type
-            })
-        
-        # Save results
-        with open(self.output_dir / "official_evaluation_results.json", 'w', encoding='utf-8') as f:
-            json.dump(self.results, f, indent=2)
-        
-        # Generate summary
-        self._generate_summary()
-    
-    def _generate_summary(self):
-        """Generate a summary of evaluation results."""
-        # Calculate overall metrics
-        rag_correct = sum(1 for r in self.results["rag"] if r["is_correct"])
-        ft_correct = sum(1 for r in self.results["ft"] if r["is_correct"])
-        
-        rag_accuracy = rag_correct / len(self.results["rag"]) if self.results["rag"] else 0
-        ft_accuracy = ft_correct / len(self.results["ft"]) if self.results["ft"] else 0
-        
-        rag_avg_time = sum(r["response_time"] for r in self.results["rag"]) / len(self.results["rag"]) if self.results["rag"] else 0
-        ft_avg_time = sum(r["response_time"] for r in self.results["ft"]) / len(self.results["ft"]) if self.results["ft"] else 0
-        
-        rag_avg_confidence = sum(r["confidence"] for r in self.results["rag"]) / len(self.results["rag"]) if self.results["rag"] else 0
-        ft_avg_confidence = sum(r["confidence"] for r in self.results["ft"]) / len(self.results["ft"]) if self.results["ft"] else 0
-        
-        # Create summary dictionary
-        summary = {
-            "rag": {
-                "accuracy": rag_accuracy,
-                "avg_response_time": rag_avg_time,
-                "avg_confidence": rag_avg_confidence,
-                "correct_count": rag_correct,
-                "total_count": len(self.results["rag"])
-            },
-            "ft": {
-                "accuracy": ft_accuracy,
-                "avg_response_time": ft_avg_time,
-                "avg_confidence": ft_avg_confidence,
-                "correct_count": ft_correct,
-                "total_count": len(self.results["ft"])
-            }
-        }
-        
-        # Check if we have question types
-        if all("question_type" in r for r in self.results["rag"]):
-            # Calculate metrics by question type
-            question_types = set(r["question_type"] for r in self.results["rag"])
-            
-            for q_type in question_types:
-                # RAG metrics by question type
-                rag_by_type = [r for r in self.results["rag"] if r["question_type"] == q_type]
-                rag_correct_by_type = sum(1 for r in rag_by_type if r["is_correct"])
-                rag_accuracy_by_type = rag_correct_by_type / len(rag_by_type) if rag_by_type else 0
-                rag_avg_time_by_type = sum(r["response_time"] for r in rag_by_type) / len(rag_by_type) if rag_by_type else 0
-                
-                # FT metrics by question type
-                ft_by_type = [r for r in self.results["ft"] if r["question_type"] == q_type]
-                ft_correct_by_type = sum(1 for r in ft_by_type if r["is_correct"])
-                ft_accuracy_by_type = ft_correct_by_type / len(ft_by_type) if ft_by_type else 0
-                ft_avg_time_by_type = sum(r["response_time"] for r in ft_by_type) / len(ft_by_type) if ft_by_type else 0
-                
-                # Add to summary
-                summary["rag"][f"{q_type}_accuracy"] = rag_accuracy_by_type
-                summary["rag"][f"{q_type}_avg_time"] = rag_avg_time_by_type
-                summary["ft"][f"{q_type}_accuracy"] = ft_accuracy_by_type
-                summary["ft"][f"{q_type}_avg_time"] = ft_avg_time_by_type
-        
-        # Save summary
-        with open(self.output_dir / "evaluation_summary.json", 'w', encoding='utf-8') as f:
-            json.dump(summary, f, indent=2)
-        
+        self._save_results(rag_results, ft_results, rag_summary, ft_summary)
+
         # Create visualizations
-        self._create_visualizations(summary)
-    
-    def _create_visualizations(self, summary: Dict[str, Any]):
+        self._create_visualizations(rag_summary, ft_summary)
+
+        return {
+            "rag": rag_summary,
+            "ft": ft_summary,
+            "rag_results": rag_results,
+            "ft_results": ft_results,
+        }
+
+    def _evaluate_answer(
+        self, answer: str, ground_truth: str, question: str = ""
+    ) -> bool:
         """
-        Create visualizations of evaluation results.
-        
+        Evaluate the correctness of an answer.
+
         Args:
-            summary: Summary dictionary of evaluation results
+            answer: The model's answer
+            ground_truth: The ground truth answer
+            question: The question (for context)
+
+        Returns:
+            bool: Whether the answer is correct
+        """
+        # Start with exact match
+        if self.exact_match_evaluator:
+            try:
+                result = self.exact_match_evaluator.evaluate_strings(
+                    prediction=answer, reference=ground_truth
+                )
+                if result["score"] == 1.0:
+                    return True
+            except Exception:
+                pass
+
+        # Try embedding distance if available
+        if self.embedding_evaluator:
+            try:
+                result = self.embedding_evaluator.evaluate_strings(
+                    prediction=answer, reference=ground_truth
+                )
+                if result["score"] >= 0.8:  # High semantic similarity
+                    return True
+            except Exception:
+                pass
+
+        # Try QA evaluation if available
+        if self.qa_eval_chain and question:
+            try:
+                eval_result = self.qa_eval_chain.evaluate(
+                    [{"question": question, "answer": ground_truth}],
+                    [{"question": question, "answer": answer}],
+                )
+                if eval_result[0]["text"].lower().startswith("yes"):
+                    return True
+            except Exception:
+                pass
+
+        # Fallback to simple substring check
+        answer_lower = answer.lower()
+        ground_truth_lower = ground_truth.lower()
+
+        # Check if key parts of the ground truth are in the answer
+        key_parts = ground_truth_lower.split()
+        if len(key_parts) > 3:
+            # For longer answers, check if important words are present
+            important_words = [
+                word
+                for word in key_parts
+                if len(word) > 3 and word.isalnum() and not word.isdigit()
+            ]
+            matches = sum(1 for word in important_words if word in answer_lower)
+            if matches / len(important_words) >= 0.7:  # 70% of important words match
+                return True
+
+        # Check for numeric values
+        import re
+
+        ground_truth_numbers = re.findall(r"\d+\.?\d*", ground_truth)
+        answer_numbers = re.findall(r"\d+\.?\d*", answer)
+        if ground_truth_numbers and set(ground_truth_numbers).issubset(
+            set(answer_numbers)
+        ):
+            return True
+
+        return False
+
+    def _calculate_summary(self, results: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """
+        Calculate summary statistics from results.
+
+        Args:
+            results: List of result dictionaries
+
+        Returns:
+            Dictionary of summary statistics
+        """
+        if not results:
+            return {
+                "accuracy": 0.0,
+                "avg_response_time": 0.0,
+                "avg_confidence": 0.0,
+            }
+
+        # Basic metrics
+        correct_count = sum(1 for r in results if r["is_correct"])
+        accuracy = correct_count / len(results)
+        avg_response_time = sum(r["response_time"] for r in results) / len(results)
+        avg_confidence = sum(r["confidence"] for r in results) / len(results)
+
+        summary = {
+            "accuracy": accuracy,
+            "avg_response_time": avg_response_time,
+            "avg_confidence": avg_confidence,
+            "total_examples": len(results),
+            "correct_count": correct_count,
+        }
+
+        # Calculate metrics by question type if available
+        question_types = set(
+            r["question_type"] for r in results if "question_type" in r
+        )
+        if question_types:
+            for qtype in question_types:
+                type_results = [r for r in results if r.get("question_type") == qtype]
+                if type_results:
+                    correct = sum(1 for r in type_results if r["is_correct"])
+                    accuracy = correct / len(type_results)
+                    avg_time = sum(r["response_time"] for r in type_results) / len(
+                        type_results
+                    )
+                    avg_conf = sum(r["confidence"] for r in type_results) / len(
+                        type_results
+                    )
+
+                    summary[f"{qtype}_accuracy"] = accuracy
+                    summary[f"{qtype}_avg_time"] = avg_time
+                    summary[f"{qtype}_avg_confidence"] = avg_conf
+                    summary[f"{qtype}_count"] = len(type_results)
+
+        return summary
+
+    def _save_results(
+        self,
+        rag_results: List[Dict[str, Any]],
+        ft_results: List[Dict[str, Any]],
+        rag_summary: Dict[str, Any],
+        ft_summary: Dict[str, Any],
+    ):
+        """
+        Save evaluation results to files.
+
+        Args:
+            rag_results: RAG model results
+            ft_results: Fine-tuned model results
+            rag_summary: RAG model summary
+            ft_summary: Fine-tuned model summary
+        """
+        # Save detailed results
+        results = {"rag": rag_results, "ft": ft_results}
+        with open(
+            self.output_dir / "evaluation_results.json", "w", encoding="utf-8"
+        ) as f:
+            json.dump(results, f, indent=2)
+
+        # Save summary
+        summary = {"rag": rag_summary, "ft": ft_summary}
+        with open(
+            self.output_dir / "evaluation_summary.json", "w", encoding="utf-8"
+        ) as f:
+            json.dump(summary, f, indent=2)
+
+        print(f"Results saved to {self.output_dir}")
+
+    def _create_visualizations(
+        self, rag_summary: Dict[str, Any], ft_summary: Dict[str, Any]
+    ):
+        """
+        Create visualizations for evaluation results.
+
+        Args:
+            rag_summary: RAG model summary
+            ft_summary: Fine-tuned model summary
         """
         # Set up plot style
         sns.set(style="whitegrid")
-        plt.figure(figsize=(12, 8))
-        
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+
         # Accuracy comparison
-        plt.subplot(2, 2, 1)
         systems = ["RAG", "Fine-Tuned"]
-        accuracies = [summary["rag"]["accuracy"], summary["ft"]["accuracy"]]
-        plt.bar(systems, accuracies, color=["#3498db", "#e74c3c"])
-        plt.title("Accuracy Comparison")
-        plt.ylabel("Accuracy")
-        plt.ylim(0, 1)
-        
+        accuracies = [rag_summary["accuracy"], ft_summary["accuracy"]]
+
+        ax1.bar(systems, accuracies, color=["#3498db", "#e74c3c"])
+        ax1.set_title("Accuracy Comparison")
+        ax1.set_ylabel("Accuracy")
+        ax1.set_ylim(0, 1)
+
         for i, v in enumerate(accuracies):
-            plt.text(i, v + 0.01, f"{v:.2%}", ha='center')
-        
+            ax1.text(i, v + 0.01, f"{v:.2%}", ha="center")
+
         # Response time comparison
-        plt.subplot(2, 2, 2)
-        times = [summary["rag"]["avg_response_time"], summary["ft"]["avg_response_time"]]
-        plt.bar(systems, times, color=["#3498db", "#e74c3c"])
-        plt.title("Average Response Time")
-        plt.ylabel("Time (seconds)")
-        
+        times = [rag_summary["avg_response_time"], ft_summary["avg_response_time"]]
+
+        ax2.bar(systems, times, color=["#3498db", "#e74c3c"])
+        ax2.set_title("Average Response Time")
+        ax2.set_ylabel("Time (seconds)")
+
         for i, v in enumerate(times):
-            plt.text(i, v + 0.01, f"{v:.3f}s", ha='center')
-        
-        # Check if we have question type data
-        if "high_confidence_accuracy" in summary["rag"]:
-            # Accuracy by question type
-            plt.subplot(2, 2, 3)
-            question_types = ["High Confidence", "Low Confidence", "Irrelevant"]
-            rag_accuracies = [
-                summary["rag"].get("high_confidence_accuracy", 0),
-                summary["rag"].get("low_confidence_accuracy", 0),
-                summary["rag"].get("irrelevant_accuracy", 0)
-            ]
-            ft_accuracies = [
-                summary["ft"].get("high_confidence_accuracy", 0),
-                summary["ft"].get("low_confidence_accuracy", 0),
-                summary["ft"].get("irrelevant_accuracy", 0)
-            ]
-            
-            x = np.arange(len(question_types))
-            width = 0.35
-            
-            plt.bar(x - width/2, rag_accuracies, width, label="RAG", color="#3498db")
-            plt.bar(x + width/2, ft_accuracies, width, label="Fine-Tuned", color="#e74c3c")
-            
-            plt.title("Accuracy by Question Type")
-            plt.ylabel("Accuracy")
-            plt.xticks(x, question_types)
-            plt.legend()
-            plt.ylim(0, 1)
-            
-            # Response time by question type
-            plt.subplot(2, 2, 4)
-            rag_times = [
-                summary["rag"].get("high_confidence_avg_time", 0),
-                summary["rag"].get("low_confidence_avg_time", 0),
-                summary["rag"].get("irrelevant_avg_time", 0)
-            ]
-            ft_times = [
-                summary["ft"].get("high_confidence_avg_time", 0),
-                summary["ft"].get("low_confidence_avg_time", 0),
-                summary["ft"].get("irrelevant_avg_time", 0)
-            ]
-            
-            plt.bar(x - width/2, rag_times, width, label="RAG", color="#3498db")
-            plt.bar(x + width/2, ft_times, width, label="Fine-Tuned", color="#e74c3c")
-            
-            plt.title("Response Time by Question Type")
-            plt.ylabel("Time (seconds)")
-            plt.xticks(x, question_types)
-            plt.legend()
-        
+            ax2.text(i, v + 0.01, f"{v:.3f}s", ha="center")
+
         plt.tight_layout()
         plt.savefig(self.output_dir / "evaluation_charts.png", dpi=300)
-        
-        # Create a summary table as CSV
-        df = pd.DataFrame({
-            "Metric": ["Accuracy", "Avg Response Time (s)", "Avg Confidence"],
-            "RAG": [summary["rag"]["accuracy"], summary["rag"]["avg_response_time"], summary["rag"]["avg_confidence"]],
-            "Fine-Tuned": [summary["ft"]["accuracy"], summary["ft"]["avg_response_time"], summary["ft"]["avg_confidence"]]
-        })
-        
-        df.to_csv(self.output_dir / "evaluation_summary.csv", index=False)
 
+        # Create additional charts if we have question type data
+        if "high_confidence_accuracy" in rag_summary:
+            fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
 
-if __name__ == "__main__":
-    # Example usage
-    # rag_system = RAGSystem(...)
-    # ft_model = FineTunedModel(...)
-    # evaluator = Evaluator(rag_system, ft_model, output_dir="../../evaluation_results")
-    
-    # Evaluate on test set
-    # evaluator.evaluate_test_set("../../data/qa_pairs/financial_qa_test.json")
-    
-    # Evaluate on official questions
-    # official_questions = [
-    #     {"question": "What was the revenue in Q2 2023?", "answer": "The revenue was $10.5 million.", "type": "high_confidence"},
-    #     {"question": "How does the profit margin compare to industry average?", "answer": "The profit margin was 2% below the industry average.", "type": "low_confidence"},
-    #     {"question": "What is your favorite color?", "answer": "I can only answer questions related to financial information in the provided documents.", "type": "irrelevant"}
-    # ]
-    # evaluator.evaluate_official_questions(official_questions)
+            # Accuracy by question type
+            question_types = ["High Confidence", "Low Confidence", "Irrelevant"]
+            rag_accuracies = [
+                rag_summary.get("high_confidence_accuracy", 0),
+                rag_summary.get("low_confidence_accuracy", 0),
+                rag_summary.get("irrelevant_accuracy", 0),
+            ]
+            ft_accuracies = [
+                ft_summary.get("high_confidence_accuracy", 0),
+                ft_summary.get("low_confidence_accuracy", 0),
+                ft_summary.get("irrelevant_accuracy", 0),
+            ]
+
+            x = range(len(question_types))
+            width = 0.35
+
+            ax1.bar(
+                [i - width / 2 for i in x],
+                rag_accuracies,
+                width,
+                label="RAG",
+                color="#3498db",
+            )
+            ax1.bar(
+                [i + width / 2 for i in x],
+                ft_accuracies,
+                width,
+                label="Fine-Tuned",
+                color="#e74c3c",
+            )
+
+            ax1.set_title("Accuracy by Question Type")
+            ax1.set_ylabel("Accuracy")
+            ax1.set_xticks(x)
+            ax1.set_xticklabels(question_types)
+            ax1.legend()
+            ax1.set_ylim(0, 1)
+
+            # Response time by question type
+            rag_times = [
+                rag_summary.get("high_confidence_avg_time", 0),
+                rag_summary.get("low_confidence_avg_time", 0),
+                rag_summary.get("irrelevant_avg_time", 0),
+            ]
+            ft_times = [
+                ft_summary.get("high_confidence_avg_time", 0),
+                ft_summary.get("low_confidence_avg_time", 0),
+                ft_summary.get("irrelevant_avg_time", 0),
+            ]
+
+            ax2.bar(
+                [i - width / 2 for i in x],
+                rag_times,
+                width,
+                label="RAG",
+                color="#3498db",
+            )
+            ax2.bar(
+                [i + width / 2 for i in x],
+                ft_times,
+                width,
+                label="Fine-Tuned",
+                color="#e74c3c",
+            )
+
+            ax2.set_title("Response Time by Question Type")
+            ax2.set_ylabel("Time (seconds)")
+            ax2.set_xticks(x)
+            ax2.set_xticklabels(question_types)
+            ax2.legend()
+
+            plt.tight_layout()
+            plt.savefig(self.output_dir / "evaluation_charts_by_type.png", dpi=300)
