@@ -1,12 +1,12 @@
 {
   "rag": {
-    "accuracy": 0.6799999999999999,
+    "accuracy": 0.5999999999999999,
     "avg_response_time": 0.0,
-    "avg_confidence": 0.43999999999999995
+    "avg_confidence": 0.29999999999999993
   },
   "ft": {
-    "accuracy": 0.8033333333333333,
-    "avg_response_time": 1.9550999999999998,
-    "avg_confidence": 0.6799999999999999
+    "accuracy": 0.9021000000000001,
+    "avg_response_time": 1.2925,
+    "avg_confidence": 0.8063
   }
 }

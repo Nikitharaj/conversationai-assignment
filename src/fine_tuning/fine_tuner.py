@@ -179,9 +179,7 @@ class FineTuner:
 
         # Log PEFT availability
         if peft_available and self.use_peft:
-            logger.info(
-                " PEFT is available and will be used for efficient fine-tuning"
-            )
+            logger.info(" PEFT is available and will be used for efficient fine-tuning")
         elif self.use_peft and not peft_available:
             logger.warning(
                 " PEFT requested but not available. Using standard fine-tuning"
@@ -781,12 +779,13 @@ class FineTuner:
 
         # Check if model is loaded and fine-tuned
         if hasattr(self, "model") and self.model is not None:
-            if hasattr(self.model, "peft_config"):
+            # Check MoE first (higher priority for display)
+            if self.use_moe and self.moe_system and self.moe_system.is_trained:
                 status["is_fine_tuned"] = True
-                status["model_type"] = "fine-tuned (LoRA)"
-            elif self.use_moe and self.moe_system and self.moe_system.is_trained:
+                status["model_type"] = "MoE (Trained)"
+            elif hasattr(self.model, "peft_config"):
                 status["is_fine_tuned"] = True
-                status["model_type"] = "fine-tuned (MoE)"
+                status["model_type"] = "LoRA Fine-tuned"
 
         # Find available checkpoints
         if self.output_dir.exists():

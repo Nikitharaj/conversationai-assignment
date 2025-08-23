@@ -12,12 +12,43 @@ import json
 import pandas as pd
 from pathlib import Path
 import warnings
+import shutil
+import os
 
 
 # Suppress specific warnings
 warnings.filterwarnings(
     "ignore", message=".*torch.utils._pytree._register_pytree_node.*"
 )
+
+
+def clear_streamlit_cache():
+    """Clear Streamlit cache files to prevent stale state issues."""
+    try:
+        # Clear Streamlit's resource cache
+        st.cache_resource.clear()
+        st.cache_data.clear()
+
+        # Clear file-based cache if it exists
+        cache_dir = Path.home() / ".streamlit" / "cache"
+        if cache_dir.exists():
+            shutil.rmtree(cache_dir, ignore_errors=True)
+
+        # Clear session state cache-related keys
+        cache_keys = [key for key in st.session_state.keys() if "cache" in key.lower()]
+        for key in cache_keys:
+            del st.session_state[key]
+
+        print("✅ Streamlit cache cleared successfully")
+
+    except Exception as e:
+        print(f"⚠️ Cache clearing failed (non-critical): {e}")
+
+
+# Clear cache on app startup to prevent stale state
+if "cache_cleared" not in st.session_state:
+    clear_streamlit_cache()
+    st.session_state.cache_cleared = True
 warnings.filterwarnings("ignore", category=FutureWarning, module="transformers")
 warnings.filterwarnings(
     "ignore", message=".*bitsandbytes.*compiled without GPU support.*"
@@ -50,6 +81,15 @@ except ImportError as e:
     except ImportError as e:
         warnings.warn(f"Could not import RAG: {e}. Using fallback.")
         langchain_available = False
+
+# Import setup wizard
+try:
+    from src.ui.setup_wizard import SetupWizard
+
+    setup_wizard_available = True
+except ImportError as e:
+    warnings.warn(f"Could not import SetupWizard: {e}")
+    setup_wizard_available = False
 
 # --- Import project modules with fallbacks ---
 try:
@@ -170,7 +210,7 @@ except ImportError as e:
                 # System selection
                 system_option = st.radio(
                     "Select Q&A System",
-                    ["RAG", "Fine-Tuned"],
+                    ["RAG", "MoE (Mixture of Experts)"],
                     index=0
                     if st.session_state.get("current_system", "RAG") == "RAG"
                     else 1,
@@ -297,7 +337,7 @@ except ImportError as e:
                             st.caption(f"Chunk ID: {chunk_id}")
 
             # Show Fine-Tuned system info (Group 118 MoE)
-            if st.session_state.current_system == "Fine-Tuned":
+            if st.session_state.current_system == "MoE (Mixture of Experts)":
                 if result.get("expert_weights"):
                     with st.expander("Show Expert Routing (Group 118 MoE)"):
                         st.markdown("### Mixture-of-Experts Routing:")
@@ -362,7 +402,7 @@ except ImportError as e:
                     f"{summary['rag']['avg_response_time']:.3f}s",
                     f"{summary['rag']['avg_confidence']:.2%}",
                 ],
-                "Fine-Tuned": [
+                "MoE (Mixture of Experts)": [
                     f"{summary['ft']['accuracy']:.2%}",
                     f"{summary['ft']['avg_response_time']:.3f}s",
                     f"{summary['ft']['avg_confidence']:.2%}",
@@ -421,7 +461,17 @@ if "ft_model" not in st.session_state:
 
 # Title and description
 st.title("Financial Q&A Systems - Group 118")
-st.markdown("**Compare RAG vs Fine-Tuned approaches for financial question answering**")
+st.markdown(
+    "**Compare RAG vs MoE (Mixture of Experts) approaches for financial question answering**"
+)
+
+# Add setup reset option in sidebar
+with st.sidebar:
+    st.markdown("---")
+    if st.button("Reset Setup"):
+        st.session_state.setup_complete = False
+        st.session_state.clear()
+        st.rerun()
 
 
 # Load models using Streamlit's caching
@@ -544,8 +594,117 @@ def load_ft_model():
             return FallbackModel()
 
 
+# Check if setup is complete
+if not st.session_state.get("setup_complete", False) and setup_wizard_available:
+    SetupWizard.render_setup_screen()
+
+    # Handle setup actions
+    if st.session_state.get("setup_action"):
+        action = st.session_state.setup_action
+
+        if action == "init_rag":
+            with st.spinner("Initializing RAG system..."):
+                if st.session_state.rag_system is None:
+                    st.session_state.rag_system = load_rag_system()
+                st.session_state.rag_ready = True
+                st.success("RAG system initialized!")
+
+        elif action == "train_moe":
+            with st.spinner("Training MoE system..."):
+                if st.session_state.ft_model is None:
+                    st.session_state.ft_model = load_ft_model()
+                # Trigger training
+                st.session_state.start_finetuning = True
+                st.session_state.selected_training_data = "financial_qa_train.json"
+                st.session_state.training_epochs = 3
+                st.session_state.training_batch_size = 4
+                st.session_state.moe_trained = True
+                st.success("MoE training initiated!")
+
+        # Clear action
+        st.session_state.setup_action = None
+        st.rerun()
+
+        # Handle form submission results from the setup wizard
+    if st.session_state.get("rag_ready"):
+        if st.session_state.rag_system is None:
+            st.session_state.rag_system = load_rag_system()
+
+    # Handle MoE training trigger from setup wizard
+    if st.session_state.get("start_moe_training") and not st.session_state.get(
+        "setup_complete", True
+    ):
+        if st.session_state.ft_model is None:
+            st.session_state.ft_model = load_ft_model()
+
+        # Set up training parameters from setup wizard
+        if st.session_state.get("moe_config"):
+            config = st.session_state.moe_config
+            st.session_state.selected_training_data = config.get(
+                "training_data", "financial_qa_train.json"
+            )
+            st.session_state.training_epochs = config.get("epochs", 3)
+            st.session_state.training_batch_size = config.get("batch_size", 4)
+
+        # Show training initiation message
+        if st.session_state.get("moe_training_started") and not st.session_state.get(
+            "training_initiated"
+        ):
+            st.info("🚀 Starting MoE training process...")
+            st.session_state.training_initiated = True
+
+        # Trigger the fine-tuning process
+        st.session_state.start_finetuning = True
+        st.session_state.start_moe_training = False  # Clear the trigger
+
+    if st.session_state.get("moe_trained"):
+        if st.session_state.ft_model is None:
+            st.session_state.ft_model = load_ft_model()
+        # Skip auto-training if setup wizard already completed MoE training
+        setup_training_completed = st.session_state.get(
+            "setup_training_completed", False
+        )
+        if (
+            not setup_training_completed
+            and hasattr(st.session_state.ft_model, "moe_system")
+            and st.session_state.ft_model.moe_system
+            and not st.session_state.ft_model.moe_system.is_trained
+        ):
+            st.session_state.start_finetuning = True
+            if not st.session_state.get("selected_training_data"):
+                st.session_state.selected_training_data = "financial_qa_train.json"
+            if not st.session_state.get("training_epochs"):
+                st.session_state.training_epochs = 3
+            if not st.session_state.get("training_batch_size"):
+                st.session_state.training_batch_size = 4
+
+    # Don't show main interface during setup
+    st.stop()
+
 # Sidebar
 UIComponents.render_sidebar()
+
+# Add cache clearing button to sidebar
+with st.sidebar:
+    st.markdown("---")
+    st.markdown("**System Management:**")
+
+    if st.button("🔄 Clear Cache & Refresh"):
+        clear_streamlit_cache()
+        st.success("Cache cleared! Refreshing...")
+        st.rerun()
+
+    if st.button("💾 Force Status Refresh"):
+        # Force refresh of MoE status
+        if st.session_state.get("ft_model") and hasattr(
+            st.session_state.ft_model, "moe_system"
+        ):
+            moe_system = st.session_state.ft_model.moe_system
+            if moe_system and moe_system.is_initialized:
+                st.session_state.moe_trained = True
+                st.session_state.moe_training_completed = True
+        st.success("Status refreshed!")
+        st.rerun()
 
 # Load both systems on startup for evaluation functionality
 # Load RAG system if not already loaded
@@ -568,6 +727,14 @@ if st.session_state.ft_model is None:
         else:
             st.success(" Fine-tuned model loaded (base model)")
 
+        # Mark MoE as trained if setup wizard completed training
+        if (
+            st.session_state.get("setup_training_completed", False)
+            and hasattr(st.session_state.ft_model, "moe_system")
+            and st.session_state.ft_model.moe_system
+        ):
+            st.session_state.ft_model.moe_system.is_trained = True
+
 # Initialize RAG system with pre-processed data
 if st.session_state.rag_system and not getattr(
     st.session_state.rag_system, "data_loaded", False
@@ -585,11 +752,19 @@ if st.session_state.rag_system and not getattr(
     except Exception as e:
         st.warning(f"Could not load pre-processed data: {e}")
 
-# Handle fine-tuning process
-if (
+# Handle fine-tuning process (triggered by setup wizard or manual selection)
+# Skip if training was already completed in setup wizard
+setup_training_needed = (
     st.session_state.get("start_finetuning", False)
-    and st.session_state.current_system == "Fine-Tuned"
-):
+    and st.session_state.get("moe_trained", False)
+    and not st.session_state.get("moe_training_completed", False)
+)
+manual_training = (
+    st.session_state.get("start_finetuning", False)
+    and st.session_state.get("current_system") == "MoE (Mixture of Experts)"
+)
+
+if setup_training_needed or manual_training:
     st.session_state.start_finetuning = False  # Reset flag
 
     if st.session_state.ft_model:
@@ -643,11 +818,32 @@ if (
 
                     progress_bar.progress(0.3)
 
-                    # Run fine-tuning (will use MoE if available)
+                    # Actually run the training (no fake progress bars!)
+                    status_text.text("Starting actual training process...")
+                    progress_bar.progress(0.4)
+
+                    if (
+                        hasattr(st.session_state.ft_model, "use_moe")
+                        and st.session_state.ft_model.use_moe
+                    ):
+                        status_text.text(
+                            "Running MoE training (this may take several minutes)..."
+                        )
+                        st.info(
+                            "**MoE training in progress** - Please wait for completion"
+                        )
+                    else:
+                        status_text.text("Running standard fine-tuning...")
+
+                    progress_bar.progress(0.5)
+
+                    # Run the actual training
                     success = st.session_state.ft_model.fine_tune(training_file)
 
                     if success:
+                        status_text.text("Finalizing and saving model...")
                         progress_bar.progress(1.0)
+                        time.sleep(1)
 
                         # Show appropriate success message based on training type
                         if (
@@ -663,6 +859,10 @@ if (
                             st.info(
                                 "**4 Expert Models Trained:** Income Statement, Balance Sheet, Cash Flow, and Notes/MD&A"
                             )
+
+                            # Set completion flags for UI updates
+                            st.session_state.moe_trained = True
+                            st.session_state.moe_training_completed = True
                         else:
                             status_text.text("Fine-tuning completed successfully!")
                             st.success(
@@ -816,7 +1016,10 @@ if submit_button and query:
             result = None
             if system_choice == "RAG" and st.session_state.rag_system:
                 result = st.session_state.rag_system.process_query(query)
-            elif system_choice == "Fine-Tuned" and st.session_state.ft_model:
+            elif (
+                system_choice == "MoE (Mixture of Experts)"
+                and st.session_state.ft_model
+            ):
                 result = st.session_state.ft_model.process_query(query)
             else:
                 st.error(f"The {system_choice} system is not loaded.")
@@ -831,13 +1034,13 @@ st.markdown("---")
 st.markdown("###  Evaluation Dashboard")
 
 # Create tabs for evaluation
-eval_tab1, eval_tab2 = st.tabs(["Quick Evaluation", "Performance Comparison"])
+eval_tab1, eval_tab2 = st.tabs(["Run Evaluation", "Performance Comparison"])
 
 with eval_tab1:
     # Add a button to force load both systems
     col1, col2 = st.columns([3, 1])
     with col1:
-        run_eval = st.button(" Run Quick Evaluation", use_container_width=True)
+        run_eval = st.button(" Run Evaluation", use_container_width=True)
     with col2:
         if st.button(
             "🔄 Load Systems", help="Force load both RAG and Fine-Tuned systems"
@@ -859,25 +1062,58 @@ with eval_tab1:
         )
 
         if rag_available and ft_available:
-            with st.spinner("Running evaluation on both systems..."):
-                # Load test questions
-                test_file = Path("data/qa_pairs/financial_qa_test.json")
-                if test_file.exists():
-                    with open(test_file, "r", encoding="utf-8") as f:
-                        test_questions = json.load(f)
+            # Load test questions
+            test_file = Path("data/qa_pairs/financial_qa_test.json")
+            if test_file.exists():
+                with open(test_file, "r", encoding="utf-8") as f:
+                    test_questions = json.load(f)
 
-                    eval_results = []
-                    for idx, qa_pair in enumerate(test_questions[:10]):
+                eval_results = []
+
+                # Create progress indicators
+                progress_bar = st.progress(0)
+                status_text = st.empty()
+
+                total_questions = min(10, len(test_questions))
+
+                try:
+                    for idx, qa_pair in enumerate(test_questions[:total_questions]):
                         test_question = qa_pair["question"]
                         expected_answer = qa_pair["answer"]
 
-                        # Test both systems
-                        rag_result = st.session_state.rag_system.process_query(
-                            test_question
+                        # Update progress
+                        progress = (idx + 1) / total_questions
+                        progress_bar.progress(progress)
+                        status_text.text(
+                            f"Processing question {idx + 1}/{total_questions}: {test_question[:50]}..."
                         )
-                        ft_result = st.session_state.ft_model.process_query(
-                            test_question
-                        )
+
+                        # Test both systems with error handling
+                        try:
+                            rag_result = st.session_state.rag_system.process_query(
+                                test_question
+                            )
+                        except Exception as e:
+                            st.error(
+                                f"RAG system error on question {idx + 1}: {str(e)}"
+                            )
+                            rag_result = {
+                                "answer": "Error processing",
+                                "confidence": 0.0,
+                                "response_time": 0.0,
+                            }
+
+                        try:
+                            ft_result = st.session_state.ft_model.process_query(
+                                test_question
+                            )
+                        except Exception as e:
+                            st.error(f"FT system error on question {idx + 1}: {str(e)}")
+                            ft_result = {
+                                "answer": "Error processing",
+                                "confidence": 0.0,
+                                "response_time": 0.0,
+                            }
 
                         eval_results.append(
                             {
@@ -891,7 +1127,21 @@ with eval_tab1:
                             }
                         )
 
+                    # Complete progress and clean up
+                    progress_bar.progress(1.0)
+                    status_text.text("Evaluation completed successfully!")
+
+                    # Clear progress indicators after a short delay
+                    import time
+
+                    time.sleep(1)
+                    progress_bar.empty()
+                    status_text.empty()
+
                     # Display results
+                    st.success(
+                        f"✅ Evaluation completed! Processed {len(eval_results)} questions."
+                    )
                     eval_df = pd.DataFrame(eval_results)
                     st.dataframe(eval_df, use_container_width=True)
 
@@ -983,8 +1233,20 @@ with eval_tab1:
                         file_name="evaluation_results.csv",
                         mime="text/csv",
                     )
-                else:
-                    st.error("Test questions file not found!")
+
+                except Exception as e:
+                    # Clean up progress indicators on error
+                    if "progress_bar" in locals():
+                        progress_bar.empty()
+                    if "status_text" in locals():
+                        status_text.empty()
+                    st.error(f"❌ Evaluation failed: {str(e)}")
+                    st.write("Please try again or check the system logs for details.")
+                    import traceback
+
+                    st.write("Error details:", traceback.format_exc())
+            else:
+                st.error("Test questions file not found!")
         else:
             # Provide detailed error information
             if not rag_available:
@@ -1093,6 +1355,6 @@ with eval_tab2:
     # Show update instructions
     if not eval_data:
         st.markdown("** To update with real data:**")
-        st.write("1. Go to 'Quick Evaluation' tab")
-        st.write("2. Click 'Run Quick Evaluation'")
+        st.write("1. Go to 'Run Evaluation' tab")
+        st.write("2. Click 'Run Evaluation'")
         st.write("3. Return to this tab to see updated results")

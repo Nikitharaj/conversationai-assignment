@@ -300,7 +300,7 @@ class MixtureOfExpertsFineTuner:
             logger.warning("PyTorch or PEFT not available. MoE functionality limited.")
 
     def _initialize_components(self):
-        """Initialize the base model and tokenizer."""
+        """Initialize the base model and tokenizer, and load saved experts if available."""
         try:
             logger.info(f"Loading base model: {self.model_name}")
 
@@ -320,6 +320,9 @@ class MixtureOfExpertsFineTuner:
 
             self.is_initialized = True
             logger.info(" Base model and tokenizer loaded successfully")
+
+            # Try to load saved experts if they exist
+            self._load_saved_experts()
 
         except Exception as e:
             logger.error(f"Failed to initialize components: {e}")
@@ -414,6 +417,10 @@ class MixtureOfExpertsFineTuner:
                     logger.warning(f"No data for expert {section}")
 
             self.is_trained = True
+
+            # Save all trained experts (after setting is_trained)
+            self._save_experts()
+
             logger.info(" MoE training completed successfully")
             return True
 
@@ -649,6 +656,145 @@ class MixtureOfExpertsFineTuner:
             primary_section,
             "This is a financial question requiring specialized analysis.",
         )
+
+    def _save_experts(self):
+        """Save all trained expert models to disk."""
+        try:
+            # Create output directory if it doesn't exist
+            self.output_dir.mkdir(parents=True, exist_ok=True)
+
+            logger.info(f"Saving MoE experts to {self.output_dir}")
+
+            # Save each expert model
+            for section, expert_model in self.experts.items():
+                expert_dir = self.output_dir / f"expert_{section}"
+                expert_dir.mkdir(parents=True, exist_ok=True)
+
+                # Save the PEFT adapter
+                expert_model.save_pretrained(expert_dir)
+                logger.info(f" Expert {section} saved to {expert_dir}")
+
+            # Save the tokenizer (shared by all experts)
+            if self.tokenizer:
+                self.tokenizer.save_pretrained(self.output_dir / "tokenizer")
+                logger.info(f" Tokenizer saved to {self.output_dir / 'tokenizer'}")
+
+            # Save router configuration
+            if hasattr(self.router, "save"):
+                self.router.save(self.output_dir / "router")
+                logger.info(f" Router saved to {self.output_dir / 'router'}")
+
+            # Save MoE configuration
+            config = {
+                "model_name": self.model_name,
+                "expert_sections": self.expert_sections,
+                "lora_rank": self.lora_rank,
+                "lora_alpha": self.lora_alpha,
+                "lora_dropout": self.lora_dropout,
+                "is_trained": self.is_trained,
+                "num_experts": len(self.experts),
+            }
+
+            config_file = self.output_dir / "moe_config.json"
+            with open(config_file, "w", encoding="utf-8") as f:
+                json.dump(config, f, indent=2)
+            logger.info(f" MoE configuration saved to {config_file}")
+
+            logger.info(" All MoE experts and configuration saved successfully")
+
+        except Exception as e:
+            logger.error(f"Failed to save MoE experts: {e}")
+            import traceback
+
+            logger.error(traceback.format_exc())
+
+    def _load_saved_experts(self):
+        """Load previously saved expert models from disk."""
+        try:
+            # Check if MoE config exists
+            config_file = self.output_dir / "moe_config.json"
+            if not config_file.exists():
+                logger.info("No saved MoE configuration found. Starting fresh.")
+                return
+
+            # Load MoE configuration
+            with open(config_file, "r", encoding="utf-8") as f:
+                config = json.load(f)
+
+            logger.info(
+                f"Found saved MoE configuration with {config.get('num_experts', 0)} experts"
+            )
+
+            # Verify all expert directories exist
+            all_experts_exist = True
+            for section in self.expert_sections:
+                expert_dir = self.output_dir / f"expert_{section}"
+                if (
+                    not expert_dir.exists()
+                    or not (expert_dir / "adapter_config.json").exists()
+                ):
+                    all_experts_exist = False
+                    break
+
+            if not all_experts_exist:
+                logger.warning(
+                    "Some expert models are missing. Starting fresh training."
+                )
+                return
+
+            # Load the experts
+            from peft import PeftModel
+
+            self.experts = {}
+            for section in self.expert_sections:
+                expert_dir = self.output_dir / f"expert_{section}"
+                try:
+                    # Create a base model instance for this expert
+                    expert_model = AutoModelForCausalLM.from_pretrained(
+                        self.model_name,
+                        torch_dtype=torch.float16
+                        if torch.cuda.is_available()
+                        else torch.float32,
+                        low_cpu_mem_usage=True,
+                    )
+
+                    # Load the PEFT adapter
+                    expert_model = PeftModel.from_pretrained(expert_model, expert_dir)
+                    self.experts[section] = expert_model
+
+                    logger.info(f" Loaded expert for {section}")
+
+                except Exception as e:
+                    logger.error(f"Failed to load expert {section}: {e}")
+                    return  # If any expert fails to load, start fresh
+
+            # Load router if it was saved
+            router_dir = self.output_dir / "router"
+            if router_dir.exists() and hasattr(self.router, "load"):
+                try:
+                    self.router.load(router_dir)
+                    logger.info(" Router loaded successfully")
+                except Exception as e:
+                    logger.warning(f"Router loading failed: {e}")
+
+            # Mark as trained if all experts loaded successfully
+            if len(self.experts) == len(self.expert_sections):
+                self.is_trained = True
+                logger.info(
+                    f" MoE system loaded successfully with {len(self.experts)} trained experts"
+                )
+            else:
+                logger.warning(
+                    "Not all experts loaded successfully. Starting fresh training."
+                )
+                self.experts = {}
+                self.is_trained = False
+
+        except Exception as e:
+            logger.error(f"Failed to load saved MoE experts: {e}")
+            logger.info("Starting fresh MoE training.")
+            self.experts = {}
+            self.is_trained = False
 
     def get_expert_stats(self) -> Dict[str, Any]:
         """Get statistics about the MoE system."""

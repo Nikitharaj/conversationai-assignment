@@ -45,7 +45,7 @@ venv.bak/
 .DS_Store
 
 # Project specific
-data/raw/
+# data/raw/
 data/processed/
 data/chunks/
 models/

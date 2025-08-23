@@ -6,6 +6,7 @@ This module combines all LangChain components into a unified RAG system.
 
 import os
 import json
+import time
 import warnings
 from pathlib import Path
 from typing import List, Dict, Union, Optional, Any, Tuple
@@ -159,14 +160,16 @@ class IntegratedRAG:
             )
 
         # Apply input-side guardrails
+        start_time = time.time()
         filtered_query, is_filtered = self.answer_generator.filter_query(query)
 
         if is_filtered:
+            response_time = time.time() - start_time
             return {
                 "query": query,
                 "answer": filtered_query,
                 "confidence": 1.0,
-                "response_time": 0.0,
+                "response_time": response_time,
                 "is_filtered": True,
                 "retrieved_chunks": [],
             }

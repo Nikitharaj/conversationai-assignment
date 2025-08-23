@@ -19,11 +19,11 @@ class UIComponents:
             # System selection
             system_option = st.radio(
                 "Select Q&A System",
-                ["RAG", "Fine-Tuned"],
+                ["RAG", "MoE (Mixture of Experts)"],
                 index=0
                 if st.session_state.get("current_system", "RAG") == "RAG"
                 else 1,
-                help="Choose between RAG (retrieval-based) or Fine-Tuned (specialized model) approach",
+                help="Choose between RAG (retrieval-based) or MoE (specialized expert routing) approach",
             )
             st.session_state.current_system = system_option
 
@@ -57,9 +57,9 @@ class UIComponents:
 
             st.markdown("---")
 
-            # Fine-tuning section
-            if system_option == "Fine-Tuned":
-                st.markdown("** Fine-Tuning Options:**")
+            # MoE section
+            if system_option == "MoE (Mixture of Experts)":
+                st.markdown("**MoE Training Options:**")
 
                 # Check if model is available
                 if "ft_model" in st.session_state and st.session_state.ft_model:
@@ -144,13 +144,30 @@ class UIComponents:
                         st.write(f"Debug: MoE initialized: {moe_system.is_initialized}")
                         st.write(f"Debug: MoE trained: {moe_system.is_trained}")
 
-                        if moe_system.is_trained:
+                        # Check multiple indicators of training completion
+                        is_trained = (
+                            moe_system.is_trained
+                            or st.session_state.get("moe_trained", False)
+                            or st.session_state.get("moe_training_completed", False)
+                            or
+                            # Check if training was successful based on status
+                            (
+                                hasattr(st.session_state.ft_model, "get_model_status")
+                                and st.session_state.ft_model.get_model_status().get(
+                                    "model_type"
+                                )
+                                == "MoE (Trained)"
+                            )
+                        )
+
+                        if is_trained:
                             st.success("MoE System: **TRAINED**")
                             st.write("• 4 Financial Experts Active")
-                            if hasattr(moe_system, "experts"):
-                                st.write(
-                                    f"• Experts: {list(moe_system.experts.keys())}"
-                                )
+                            st.write(
+                                "• Income Statement, Balance Sheet, Cash Flow, Notes/MD&A"
+                            )
+                            if hasattr(moe_system, "experts") and moe_system.experts:
+                                st.write(f"• {len(moe_system.experts)} experts loaded")
                         else:
                             st.warning("MoE System: **NOT TRAINED**")
                             st.write("• Use Fine-Tuning to train experts")
