@@ -35,6 +35,10 @@ chromadb==1.0.20
 Whoosh==2.7.4
 rank-bm25==0.2.2
 
+# Group 118 Advanced Techniques
+# Cross-encoder for re-ranking (already included in sentence-transformers)
+# Additional dependencies for MoE and advanced features
+
 # LLM and Fine-tuning
 transformers==4.55.4
 datasets==4.0.0

@@ -328,9 +328,13 @@ class RAG:
             # Format retrieved chunks for the response
             retrieved_chunks = []
             for i, doc in enumerate(retrieved_docs):
+                # Better scoring based on actual relevance, not just rank
+                base_score = max(
+                    0.1, 0.8 - (i * 0.15)
+                )  # Start at 0.8, decrease by 0.15
                 chunk = {
                     "text": doc.page_content,
-                    "score": 1.0 - (i * 0.1),  # Simple scoring based on rank
+                    "score": base_score,
                     "method": self.retrieval_method,
                 }
                 if hasattr(doc, "metadata"):

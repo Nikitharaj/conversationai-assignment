@@ -96,11 +96,21 @@ try:
         prepare_model_for_kbit_training,
     )
 
-    print(f"✅ Successfully loaded PEFT")
+    print(f" Successfully loaded PEFT")
     peft_available = True
 except ImportError as e:
-    print(f"❌ PEFT import error: {e}")
+    print(f" PEFT import error: {e}")
     peft_available = False
+
+# Import MoE components
+try:
+    from .mixture_of_experts import MixtureOfExpertsFineTuner
+
+    moe_available = True
+    logger.info(" Mixture-of-Experts components available")
+except ImportError as e:
+    warnings.warn(f"MoE components not available: {e}")
+    moe_available = False
 
 # Create a dummy Dataset class for type hints when datasets is not available
 if not datasets_available:
@@ -119,6 +129,7 @@ class FineTuner:
         model_name: str = "distilgpt2",
         output_dir: Union[str, Path] = "fine_tuned_model",
         use_peft: bool = True,
+        use_moe: bool = True,  # Group 118: Enable MoE by default
     ):
         """
         Initialize the fine-tuner.
@@ -131,6 +142,7 @@ class FineTuner:
         self.model_name = model_name
         self.output_dir = Path(output_dir)
         self.use_peft = use_peft
+        self.use_moe = use_moe  # Group 118: MoE flag
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
         # Training parameters
@@ -146,6 +158,17 @@ class FineTuner:
         self.chain = None
         self.llm = None
 
+        # MoE components (Group 118 Advanced Technique)
+        self.moe_system = None
+        if self.use_moe and moe_available:
+            self.moe_system = MixtureOfExpertsFineTuner(
+                model_name=model_name, output_dir=self.output_dir / "moe"
+            )
+            logger.info(" MoE system initialized")
+        elif self.use_moe and not moe_available:
+            logger.warning(" MoE requested but not available")
+            self.use_moe = False
+
         # Initialize components if available
         if langchain_available and transformers_available:
             self._initialize_components()
@@ -157,11 +180,11 @@ class FineTuner:
         # Log PEFT availability
         if peft_available and self.use_peft:
             logger.info(
-                "✅ PEFT is available and will be used for efficient fine-tuning"
+                " PEFT is available and will be used for efficient fine-tuning"
             )
         elif self.use_peft and not peft_available:
             logger.warning(
-                "❌ PEFT requested but not available. Using standard fine-tuning"
+                " PEFT requested but not available. Using standard fine-tuning"
             )
             self.use_peft = False
         elif not self.use_peft:
@@ -169,7 +192,7 @@ class FineTuner:
 
     def process_query(self, query: str) -> Dict[str, Any]:
         """
-        Process a query using the fine-tuned model.
+        Process a query using the fine-tuned model (with optional MoE).
 
         Args:
             query: The query to process
@@ -180,6 +203,30 @@ class FineTuner:
         import time
 
         start_time = time.time()
+
+        # Use MoE system if available and trained (Group 118 Advanced Technique)
+        if self.use_moe and self.moe_system and self.moe_system.is_trained:
+            logger.info("Using MoE system for query processing")
+            moe_result = self.moe_system.process_query(query)
+
+            # Add additional metadata for better UI integration
+            moe_result.update(
+                {
+                    "model_type": "MoE Fine-Tuned",
+                    "method": "Mixture of Experts",
+                    "system_type": "Fine-Tuned",
+                }
+            )
+
+            return moe_result
+        elif self.use_moe and self.moe_system and not self.moe_system.is_trained:
+            logger.warning(
+                "  MoE system available but not trained. Using standard fine-tuning."
+            )
+        elif self.use_moe and not self.moe_system:
+            logger.warning(
+                "  MoE requested but system not available. Using standard fine-tuning."
+            )
 
         try:
             if langchain_available and transformers_available and self.chain:
@@ -194,11 +241,15 @@ class FineTuner:
                     if answer_start != -1:
                         answer = answer[answer_start + 7 :].strip()
 
+                # Advanced answer cleaning
+                answer = self._clean_generated_answer(answer)
+
                 # Check if answer is poor quality (repetitive, nonsensical, etc.)
                 if (
                     not answer
                     or len(answer) < 10
                     or self._is_repetitive(answer)
+                    or self._is_nonsensical(answer)
                     or any(
                         bad_phrase in answer.lower()
                         for bad_phrase in [
@@ -206,6 +257,8 @@ class FineTuner:
                             "i think",
                             "apple is the largest",
                             "a lot of",
+                            "we were able to do",
+                            "in the first quarter",
                         ]
                     )
                 ):
@@ -225,11 +278,20 @@ class FineTuner:
 
         response_time = time.time() - start_time
 
+        # Check if we're using a fine-tuned model
+        model_type = "base"
+        if hasattr(self.model, "peft_config"):
+            model_type = "fine-tuned (LoRA)"
+        elif self.use_moe and self.moe_system and self.moe_system.is_trained:
+            model_type = "fine-tuned (MoE)"
+
         return {
             "query": query,
             "answer": answer,
             "confidence": confidence,
             "response_time": response_time,
+            "model_type": model_type,
+            "method": "Fine-Tuned",
         }
 
     def _is_repetitive(self, text: str) -> bool:
@@ -246,6 +308,74 @@ class FineTuner:
         unique_sentences = set(sentences)
         if len(unique_sentences) / len(sentences) < 0.5:  # More than 50% repetition
             return True
+
+        return False
+
+    def _clean_generated_answer(self, answer: str) -> str:
+        """Clean up generated answer by removing artifacts and improving quality."""
+        if not answer:
+            return answer
+
+        # Remove common generation artifacts
+        lines = answer.split("\n")
+        clean_lines = []
+
+        for line in lines:
+            line = line.strip()
+            if line:
+                # Stop at question markers or repetitive patterns
+                if line.startswith("Q:") or line.startswith("Question:"):
+                    break
+                # Remove very short or nonsensical lines
+                if len(line) > 5 and not line.startswith("A:"):
+                    clean_lines.append(line)
+
+        # Join lines and limit length
+        cleaned = " ".join(clean_lines)
+
+        # Remove repetitive sentence patterns
+        sentences = [s.strip() for s in cleaned.split(".") if s.strip()]
+        unique_sentences = []
+        seen = set()
+
+        for sentence in sentences:
+            # Simple deduplication
+            key = sentence.lower()[:50]  # First 50 chars as key
+            if key not in seen:
+                seen.add(key)
+                unique_sentences.append(sentence)
+
+        return ". ".join(unique_sentences[:3])  # Limit to 3 sentences max
+
+    def _is_nonsensical(self, text: str) -> bool:
+        """Check if text contains nonsensical patterns."""
+        if not text or len(text) < 10:
+            return True
+
+        text_lower = text.lower()
+
+        # Check for obvious nonsensical patterns
+        nonsensical_patterns = [
+            "we were able to do that",
+            "in the first quarter of the year",
+            "we were able to",
+            "q: what was",
+            "answer: we were",
+        ]
+
+        # Check if text is mostly repetitive patterns
+        for pattern in nonsensical_patterns:
+            if text_lower.count(pattern) > 1:
+                return True
+
+        # Check for excessive repetition of short phrases
+        words = text_lower.split()
+        if len(words) > 10:
+            # Check for repeated 3-word phrases
+            three_grams = [" ".join(words[i : i + 3]) for i in range(len(words) - 2)]
+            unique_trigrams = set(three_grams)
+            if len(unique_trigrams) / len(three_grams) < 0.3:  # Less than 30% unique
+                return True
 
         return False
 
@@ -271,6 +401,7 @@ class FineTuner:
     def quick_fine_tune(self, qa_pairs: List[Dict[str, str]]) -> bool:
         """
         Perform quick fine-tuning on a small set of Q&A pairs for on-the-fly training.
+        Includes MoE training if enabled (Group 118 Advanced Technique).
 
         Args:
             qa_pairs: List of Q&A pairs for training
@@ -278,14 +409,31 @@ class FineTuner:
         Returns:
             True if successful, False otherwise
         """
+        # Train MoE system if enabled (Group 118 Advanced Technique)
+        if self.use_moe and self.moe_system:
+            try:
+                logger.info("Training MoE system...")
+                moe_success = self.moe_system.train_moe(qa_pairs, epochs=1)
+                if moe_success:
+                    logger.info(" MoE training completed successfully")
+                    return True
+                else:
+                    logger.warning(
+                        "MoE training failed, falling back to standard fine-tuning"
+                    )
+            except Exception as e:
+                logger.error(f"MoE training failed with error: {e}")
+                logger.warning("Falling back to standard fine-tuning")
+
+        # Standard fine-tuning process
         try:
             if not transformers_available or not datasets_available:
-                logger.error("❌ Missing required dependencies for fine-tuning")
+                logger.error(" Missing required dependencies for fine-tuning")
                 logger.error(f"   Transformers available: {transformers_available}")
                 logger.error(f"   Datasets available: {datasets_available}")
                 return False
 
-            logger.info("🚀 Starting quick fine-tuning process")
+            logger.info(" Starting quick fine-tuning process")
             if self.use_peft and peft_available:
                 logger.info("   Using PEFT for efficient training")
             else:
@@ -364,6 +512,9 @@ class FineTuner:
             # Train the model
             trainer.train()
 
+            # Clean up old checkpoints
+            self.cleanup_old_checkpoints()
+
             # Update the chain with the fine-tuned model
             self._initialize_components()
 
@@ -376,25 +527,29 @@ class FineTuner:
     def _initialize_components(self):
         """Initialize the model, tokenizer, and LangChain components."""
         try:
-            # Load tokenizer
-            self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
+            # Check for saved checkpoint first
+            checkpoint_loaded = self._load_checkpoint_if_exists()
 
-            # Ensure the tokenizer has a padding token
-            if self.tokenizer.pad_token is None:
-                self.tokenizer.pad_token = self.tokenizer.eos_token
+            if not checkpoint_loaded:
+                # Load tokenizer
+                self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
 
-            # Load model with memory-efficient settings
-            self.model = AutoModelForCausalLM.from_pretrained(
-                self.model_name,
-                torch_dtype=torch.float16
-                if torch.cuda.is_available()
-                else torch.float32,
-                low_cpu_mem_usage=True,
-            )
+                # Ensure the tokenizer has a padding token
+                if self.tokenizer.pad_token is None:
+                    self.tokenizer.pad_token = self.tokenizer.eos_token
 
-            # Apply PEFT if requested and available
-            if self.use_peft and peft_available:
-                self._apply_peft()
+                # Load model with memory-efficient settings
+                self.model = AutoModelForCausalLM.from_pretrained(
+                    self.model_name,
+                    torch_dtype=torch.float16
+                    if torch.cuda.is_available()
+                    else torch.float32,
+                    low_cpu_mem_usage=True,
+                )
+
+                # Apply PEFT if requested and available
+                if self.use_peft and peft_available:
+                    self._apply_peft()
 
             # Create LangChain pipeline with better parameters
             text_generation_pipeline = pipeline(
@@ -406,7 +561,10 @@ class FineTuner:
                 top_p=0.8,
                 top_k=40,
                 do_sample=True,
+                no_repeat_ngram_size=3,  # Prevent repetitive phrases
+                repetition_penalty=1.2,  # Penalize repetition
                 pad_token_id=self.tokenizer.eos_token_id,
+                eos_token_id=self.tokenizer.eos_token_id,
                 device=-1,  # Use CPU to avoid memory issues
             )
 
@@ -462,12 +620,243 @@ class FineTuner:
             # Apply LoRA
             self.model = get_peft_model(self.model, peft_config)
 
-            logger.info("✅ Successfully applied PEFT (LoRA) to the model")
+            logger.info(" Successfully applied PEFT (LoRA) to the model")
 
         except Exception as e:
-            logger.error(f"❌ Error applying PEFT: {e}")
+            logger.error(f" Error applying PEFT: {e}")
             logger.warning("Falling back to standard fine-tuning")
             self.use_peft = False
+
+    def _load_checkpoint_if_exists(self) -> bool:
+        """
+        Check for and load existing fine-tuned model checkpoint.
+
+        Returns:
+            bool: True if checkpoint was loaded, False otherwise
+        """
+        if not peft_available or not self.use_peft:
+            return False
+
+        # Look for saved checkpoints in the output directory
+        checkpoint_dirs = []
+
+        # Check for direct checkpoint in output_dir
+        if (self.output_dir / "adapter_config.json").exists():
+            checkpoint_dirs.append(self.output_dir)
+
+        # Check for subdirectories with checkpoints
+        for subdir in self.output_dir.iterdir():
+            if subdir.is_dir():
+                # Check for checkpoint-* directories
+                for checkpoint_dir in subdir.iterdir():
+                    if checkpoint_dir.is_dir() and checkpoint_dir.name.startswith(
+                        "checkpoint-"
+                    ):
+                        if (checkpoint_dir / "adapter_config.json").exists():
+                            checkpoint_dirs.append(checkpoint_dir)
+
+                # Check if subdir itself has adapter config
+                if (subdir / "adapter_config.json").exists():
+                    checkpoint_dirs.append(subdir)
+
+        if not checkpoint_dirs:
+            logger.info("No existing fine-tuned checkpoint found. Will use base model.")
+            return False
+
+        # Use the most recent checkpoint
+        latest_checkpoint = max(checkpoint_dirs, key=lambda x: x.stat().st_mtime)
+
+        try:
+            logger.info(f"Loading fine-tuned checkpoint from: {latest_checkpoint}")
+
+            # Load tokenizer from checkpoint or base model
+            tokenizer_path = (
+                latest_checkpoint
+                if (latest_checkpoint / "tokenizer_config.json").exists()
+                else self.model_name
+            )
+            self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
+
+            if self.tokenizer.pad_token is None:
+                self.tokenizer.pad_token = self.tokenizer.eos_token
+
+            # Load base model
+            self.model = AutoModelForCausalLM.from_pretrained(
+                self.model_name,
+                torch_dtype=torch.float16
+                if torch.cuda.is_available()
+                else torch.float32,
+                low_cpu_mem_usage=True,
+            )
+
+            # Load PEFT adapter
+            from peft import PeftModel
+
+            self.model = PeftModel.from_pretrained(self.model, latest_checkpoint)
+
+            logger.info(" Successfully loaded fine-tuned checkpoint")
+            return True
+
+        except Exception as e:
+            logger.error(f" Failed to load checkpoint: {e}")
+            logger.info("Falling back to base model initialization")
+            return False
+
+    def load_checkpoint(self, checkpoint_path: Union[str, Path]) -> bool:
+        """
+        Load a specific fine-tuned model checkpoint.
+
+        Args:
+            checkpoint_path: Path to the checkpoint directory
+
+        Returns:
+            bool: True if successfully loaded, False otherwise
+        """
+        checkpoint_path = Path(checkpoint_path)
+
+        if not checkpoint_path.exists():
+            logger.error(f"Checkpoint path does not exist: {checkpoint_path}")
+            return False
+
+        if not (checkpoint_path / "adapter_config.json").exists():
+            logger.error(f"No adapter config found in: {checkpoint_path}")
+            return False
+
+        try:
+            logger.info(f"Loading checkpoint from: {checkpoint_path}")
+
+            # Load tokenizer
+            tokenizer_path = (
+                checkpoint_path
+                if (checkpoint_path / "tokenizer_config.json").exists()
+                else self.model_name
+            )
+            self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
+
+            if self.tokenizer.pad_token is None:
+                self.tokenizer.pad_token = self.tokenizer.eos_token
+
+            # Load base model
+            self.model = AutoModelForCausalLM.from_pretrained(
+                self.model_name,
+                torch_dtype=torch.float16
+                if torch.cuda.is_available()
+                else torch.float32,
+                low_cpu_mem_usage=True,
+            )
+
+            # Load PEFT adapter
+            if peft_available:
+                from peft import PeftModel
+
+                self.model = PeftModel.from_pretrained(self.model, checkpoint_path)
+
+            # Update LangChain components
+            self._update_langchain_components()
+
+            logger.info(" Successfully loaded checkpoint")
+            return True
+
+        except Exception as e:
+            logger.error(f" Failed to load checkpoint: {e}")
+            return False
+
+    def get_model_status(self) -> Dict[str, Any]:
+        """
+        Get information about the current model status.
+
+        Returns:
+            Dict containing model status information
+        """
+        status = {
+            "model_name": self.model_name,
+            "output_dir": str(self.output_dir),
+            "use_peft": self.use_peft,
+            "use_moe": self.use_moe,
+            "is_fine_tuned": False,
+            "model_type": "base",
+            "checkpoint_path": None,
+            "available_checkpoints": [],
+        }
+
+        # Check if model is loaded and fine-tuned
+        if hasattr(self, "model") and self.model is not None:
+            if hasattr(self.model, "peft_config"):
+                status["is_fine_tuned"] = True
+                status["model_type"] = "fine-tuned (LoRA)"
+            elif self.use_moe and self.moe_system and self.moe_system.is_trained:
+                status["is_fine_tuned"] = True
+                status["model_type"] = "fine-tuned (MoE)"
+
+        # Find available checkpoints
+        if self.output_dir.exists():
+            for subdir in self.output_dir.iterdir():
+                if subdir.is_dir():
+                    for checkpoint_dir in subdir.iterdir():
+                        if checkpoint_dir.is_dir() and checkpoint_dir.name.startswith(
+                            "checkpoint-"
+                        ):
+                            if (checkpoint_dir / "adapter_config.json").exists():
+                                status["available_checkpoints"].append(
+                                    str(checkpoint_dir)
+                                )
+
+                    if (subdir / "adapter_config.json").exists():
+                        status["available_checkpoints"].append(str(subdir))
+
+        return status
+
+    def cleanup_old_checkpoints(self) -> None:
+        """
+        Remove old checkpoints to save space and avoid conflicts.
+        Keeps only the most recent checkpoint.
+        """
+        try:
+            checkpoint_dirs = []
+
+            # Find all checkpoint directories
+            if self.output_dir.exists():
+                for subdir in self.output_dir.iterdir():
+                    if subdir.is_dir():
+                        for checkpoint_dir in subdir.iterdir():
+                            if (
+                                checkpoint_dir.is_dir()
+                                and checkpoint_dir.name.startswith("checkpoint-")
+                            ):
+                                if (checkpoint_dir / "adapter_config.json").exists():
+                                    checkpoint_dirs.append(checkpoint_dir)
+
+                        if (subdir / "adapter_config.json").exists():
+                            checkpoint_dirs.append(subdir)
+
+            if len(checkpoint_dirs) <= 1:
+                logger.info("No old checkpoints to clean up")
+                return
+
+            # Sort by modification time and keep only the newest
+            checkpoint_dirs.sort(key=lambda x: x.stat().st_mtime, reverse=True)
+            latest_checkpoint = checkpoint_dirs[0]
+            old_checkpoints = checkpoint_dirs[1:]
+
+            logger.info(f"Keeping latest checkpoint: {latest_checkpoint}")
+
+            # Remove old checkpoints
+            import shutil
+
+            for old_checkpoint in old_checkpoints:
+                try:
+                    if old_checkpoint.is_dir():
+                        shutil.rmtree(old_checkpoint)
+                        logger.info(f"Removed old checkpoint: {old_checkpoint}")
+                except Exception as e:
+                    logger.warning(f"Failed to remove {old_checkpoint}: {e}")
+
+            logger.info(
+                f"Cleanup complete. Kept 1 checkpoint, removed {len(old_checkpoints)} old ones"
+            )
+
+        except Exception as e:
+            logger.error(f"Error during checkpoint cleanup: {e}")
 
     def prepare_dataset(self, qa_file: Union[str, Path]) -> Dataset:
         """
@@ -520,14 +909,46 @@ class FineTuner:
     ):
         """
         Fine-tune the model on Q&A data.
+        Uses MoE if available, otherwise falls back to standard fine-tuning.
 
         Args:
             train_file: Path to a JSON file containing training Q&A pairs
             eval_file: Optional path to a JSON file containing evaluation Q&A pairs
         """
+        # Try MoE training first if enabled (Group 118 Advanced Technique)
+        if self.use_moe and self.moe_system:
+            try:
+                logger.info("Starting MoE fine-tuning...")
+
+                # Load Q&A pairs for MoE training
+                import json
+
+                with open(train_file, "r", encoding="utf-8") as f:
+                    qa_pairs = json.load(f)
+
+                # Train MoE system
+                moe_success = self.moe_system.train_moe(
+                    qa_pairs, epochs=self.num_epochs
+                )
+
+                if moe_success:
+                    logger.info("MoE training completed successfully!")
+
+                    # Update LangChain components to use the trained MoE system
+                    self._update_langchain_components()
+                    return True
+                else:
+                    logger.warning(
+                        "MoE training failed, falling back to standard fine-tuning"
+                    )
+            except Exception as e:
+                logger.error(f"MoE training failed with error: {e}")
+                logger.warning("Falling back to standard fine-tuning")
+
+        # Standard fine-tuning fallback
         if not transformers_available:
             warnings.warn("Transformers not available. Cannot fine-tune model.")
-            return
+            return False
 
         # Prepare datasets
         train_dataset = self.prepare_dataset(train_file)
@@ -613,6 +1034,9 @@ class FineTuner:
         trainer.save_model()
         self.tokenizer.save_pretrained(self.output_dir)
 
+        # Clean up old checkpoints
+        self.cleanup_old_checkpoints()
+
         # Update LangChain components with fine-tuned model
         self._update_langchain_components()
 
@@ -629,10 +1053,15 @@ class FineTuner:
                 "text-generation",
                 model=self.model,
                 tokenizer=self.tokenizer,
-                max_new_tokens=100,
-                temperature=0.7,
-                top_p=0.9,
-                top_k=50,
+                max_new_tokens=150,
+                temperature=0.3,  # Lower for more focused responses
+                top_p=0.8,
+                top_k=40,
+                do_sample=True,
+                no_repeat_ngram_size=3,  # Prevent repetitive phrases
+                repetition_penalty=1.2,  # Penalize repetition
+                pad_token_id=self.tokenizer.eos_token_id,
+                eos_token_id=self.tokenizer.eos_token_id,
                 device=-1,  # Use CPU to avoid memory issues
             )
 

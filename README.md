@@ -1,6 +1,13 @@
-# Financial Q&A System
+# Financial Q&A System - Group 118
+
+## RAG vs Fine-Tuning with Advanced Techniques
 
 A comprehensive system comparing **RAG (Retrieval-Augmented Generation)** and **Fine-Tuned Language Models** for answering questions based on financial statements.
+
+**Group 118 Advanced Techniques:**
+
+- 🔄 **RAG**: Cross-Encoder Re-ranking for improved retrieval quality
+- 🧠 **Fine-Tuning**: Mixture-of-Experts with specialized financial section routing
 
 ## 🎯 Project Overview
 
@@ -9,14 +16,16 @@ This project implements and compares two state-of-the-art approaches for financi
 1. **🔍 RAG System**: Hybrid retrieval (BM25 + FAISS) + DistilGPT2 generation
 2. **🎯 Fine-Tuned Model**: PEFT (LoRA) fine-tuning on financial Q&A data
 
-## ✨ Key Features
+## ✨ Key Features (Group 118 Enhanced)
 
-- **📊 52 Q&A Pairs**: Comprehensive dataset exceeding assignment requirements
-- **🔄 Hybrid Retrieval**: Dense (FAISS) + Sparse (BM25) search combination
-- **⚡ PEFT Fine-tuning**: Parameter-efficient training with LoRA adapters
-- **🛡️ Guardrails**: Input validation and output verification
-- **📱 Professional UI**: Streamlit interface with real-time metrics
+- **📊 155 Q&A Pairs**: Comprehensive dataset far exceeding assignment requirements
+- **🔄 Cross-Encoder Re-ranking**: Advanced RAG technique for improved retrieval quality
+- **🧠 Mixture-of-Experts**: Specialized fine-tuning with financial section routing
+- **⚡ PEFT + MoE**: Parameter-efficient training with multiple expert adapters
+- **🛡️ Advanced Guardrails**: Input validation, output verification, numeric grounding
+- **📱 Enhanced UI**: Real-time visualization of re-ranking and expert routing
 - **🔧 Multi-format Support**: PDF, Excel, CSV, HTML, TXT processing
+- **📈 Comprehensive Evaluation**: Automated testing with correctness rules
 
 ## 📁 Project Structure
 
@@ -45,7 +54,7 @@ This project implements and compares two state-of-the-art approaches for financi
 │   ├── rag_system.ipynb         # RAG implementation
 │   ├── fine_tuning.ipynb        # Fine-tuning experiments
 │   └── evaluation.ipynb         # Model comparison
-├── 🧪 tests/                     # Comprehensive test suite (17 files)
+├──  tests/                     # Comprehensive test suite (17 files)
 └── 📈 evaluation_results/        # Performance metrics
 ```
 
@@ -124,7 +133,7 @@ This project implements and compares two state-of-the-art approaches for financi
 - Test with irrelevant questions
 - Observe guardrail filtering
 
-## 🧪 Testing
+## Testing
 
 Run the comprehensive test suite to verify functionality:
 
@@ -147,27 +156,31 @@ For detailed testing information, see `tests/README.md`.
 
 ## 🔧 Technical Implementation
 
-### 🔍 RAG System
+### 🔍 RAG System (Group 118 Enhanced)
 
 - **Hybrid Retrieval**: BM25 (keyword) + FAISS (semantic) with weighted fusion
-- **Chunking**: Multi-size strategy (100 & 400 tokens) for optimal retrieval
+- **Cross-Encoder Re-ranking**: MS-MARCO style joint query-document scoring
+- **Chunking**: Multi-size strategy (100 & 400 tokens) with comprehensive metadata
 - **Embeddings**: all-MiniLM-L6-v2 (lightweight, open-source)
 - **Generation**: DistilGPT2 with context-aware prompting
-- **Guardrails**: Input filtering + hallucination detection
+- **Advanced Guardrails**: Input filtering + numeric grounding + hallucination detection
 
-### 🎯 Fine-Tuned Model
+### 🎯 Fine-Tuned Model (Group 118 Enhanced)
 
 - **Base Model**: DistilGPT2 (small, efficient)
-- **PEFT Method**: LoRA (Low-Rank Adaptation) with 8-rank adapters
+- **Mixture-of-Experts**: 4 specialized LoRA adapters for financial sections
+- **Expert Routing**: Intelligent question classification and expert selection
+- **PEFT Method**: LoRA (Low-Rank Adaptation) with 8-rank adapters per expert
 - **Training**: Parameter-efficient fine-tuning (95% fewer parameters)
-- **Dataset**: 52 financial Q&A pairs (domain-specific)
+- **Dataset**: 155 financial Q&A pairs (domain-specific)
 - **Performance**: 2.6 second training time vs traditional hours
 
-### 📊 Dataset
+### 📊 Dataset (Group 118 Enhanced)
 
-- **52 Q&A Pairs** from Apple 2023 financial report + sample statements
-- **Training Split**: 41 pairs for model training
+- **155 Q&A Pairs** from Apple 2023/2024 financial reports + sample statements
+- **Training Split**: 41 pairs for model training (no test leakage)
 - **Test Split**: 11 pairs for evaluation
+- **Comprehensive Coverage**: Income Statement, Balance Sheet, Cash Flow, Notes, MD&A
 - **Multi-format Sources**: PDF, text, structured financial data
 
 ## 🛠️ Key Dependencies

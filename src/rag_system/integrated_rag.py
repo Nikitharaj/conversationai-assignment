@@ -14,6 +14,7 @@ from typing import List, Dict, Union, Optional, Any, Tuple
 from .document_chunker import DocumentChunker
 from .embedding_manager import EmbeddingManager
 from .answer_generator import AnswerGenerator
+from .cross_encoder_reranker import CrossEncoderReranker
 
 # Try to import LangChain
 try:
@@ -61,6 +62,10 @@ class IntegratedRAG:
         )
         self.embedding_manager = EmbeddingManager(model_name=embedding_model)
         self.answer_generator = AnswerGenerator(model_name=llm_model)
+
+        # Initialize Cross-Encoder Re-ranker (Group 118 Advanced Technique)
+        self.cross_encoder_reranker = CrossEncoderReranker()
+        self.use_cross_encoder = True
 
         if langchain_available:
             print("LangChain components initialized successfully")
@@ -166,18 +171,29 @@ class IntegratedRAG:
                 "retrieved_chunks": [],
             }
 
-        # Retrieve relevant chunks
+        # Retrieve relevant chunks (initial retrieval with higher top_k for re-ranking)
+        initial_top_k = max(self.top_k * 3, 12)  # Get more candidates for re-ranking
+
         if self.retrieval_method == "dense":
             retrieved_chunks = self.embedding_manager.dense_search(
-                query, top_k=self.top_k
+                query, top_k=initial_top_k
             )
         elif self.retrieval_method == "sparse":
             retrieved_chunks = self.embedding_manager.sparse_search(
-                query, top_k=self.top_k
+                query, top_k=initial_top_k
             )
         else:  # hybrid
             retrieved_chunks = self.embedding_manager.hybrid_search(
-                query, top_k=self.top_k
+                query, top_k=initial_top_k
+            )
+
+        # Apply Cross-Encoder Re-ranking (Group 118 Advanced Technique)
+        rerank_metadata = {}
+        if self.use_cross_encoder and retrieved_chunks:
+            retrieved_chunks, rerank_metadata = (
+                self.cross_encoder_reranker.rerank_chunks(
+                    query, retrieved_chunks, top_k=self.top_k
+                )
             )
 
         # Generate answer
@@ -194,6 +210,12 @@ class IntegratedRAG:
         if is_hallucination:
             confidence *= 0.5
 
+        # Adjust confidence for data coverage issues
+        if "don't have financial data for" in answer:
+            confidence = 0.1  # Very low confidence when no data available
+        elif "cannot find specific information" in answer:
+            confidence = 0.2  # Low confidence when no relevant information found
+
         return {
             "query": query,
             "answer": answer,
@@ -202,6 +224,9 @@ class IntegratedRAG:
             "is_filtered": False,
             "is_hallucination": is_hallucination,
             "retrieved_chunks": retrieved_chunks,
+            "rerank_metadata": rerank_metadata,  # Group 118: Cross-encoder re-ranking info
+            "retrieval_method": self.retrieval_method,
+            "cross_encoder_used": self.use_cross_encoder and bool(rerank_metadata),
         }
 
     def save(self, output_dir: Union[str, Path]):

@@ -267,6 +267,175 @@ class TestFineTuner(unittest.TestCase):
             self.assertIn("answer", result)
             self.assertEqual(result["confidence"], 0.0)
 
+    def test_moe_initialization(self):
+        """Test MoE system initialization."""
+        tuner = FineTuner(model_name="distilgpt2", use_moe=True)
+
+        # Check that MoE system is initialized
+        self.assertIsNotNone(tuner.moe_system)
+        self.assertTrue(tuner.use_moe)
+
+    def test_moe_disabled(self):
+        """Test behavior when MoE is disabled."""
+        tuner = FineTuner(model_name="distilgpt2", use_moe=False)
+
+        # MoE should not be used
+        self.assertFalse(tuner.use_moe)
+
+    @patch("src.fine_tuning.fine_tuner.transformers_available", True)
+    def test_process_query_with_moe(self):
+        """Test query processing with MoE system."""
+        tuner = FineTuner(model_name="distilgpt2", use_moe=True)
+
+        # Mock MoE system
+        mock_moe_result = {
+            "answer": "Revenue was $100M",
+            "confidence": 0.9,
+            "expert_weights": {
+                "income_statement": 0.8,
+                "balance_sheet": 0.1,
+                "cash_flow": 0.05,
+                "notes_mda": 0.05,
+            },
+            "selected_expert": "income_statement",
+            "moe_metadata": {
+                "routing_time": 0.01,
+                "generation_time": 0.1,
+                "total_time": 0.11,
+            },
+        }
+
+        with patch.object(
+            tuner.moe_system, "process_query", return_value=mock_moe_result
+        ):
+            with patch.object(tuner.moe_system, "is_trained", return_value=True):
+                result = tuner.process_query("What was the revenue?")
+
+                # Check that MoE result is returned
+                self.assertEqual(result["answer"], "Revenue was $100M")
+                self.assertIn("expert_weights", result)
+                self.assertIn("selected_expert", result)
+                self.assertIn("moe_metadata", result)
+                self.assertEqual(result["selected_expert"], "income_statement")
+
+    @patch("src.fine_tuning.fine_tuner.transformers_available", True)
+    def test_process_query_fallback_to_base(self):
+        """Test query processing falls back to base model when MoE not trained."""
+        tuner = FineTuner(model_name="distilgpt2", use_moe=True)
+        tuner.tokenizer = MagicMock()
+        tuner.model = MagicMock()
+
+        # Mock model generation
+        mock_output = MagicMock()
+        mock_output.logits = [[0.1, 0.2, 0.3]]
+        tuner.model.return_value = mock_output
+
+        # Mock tokenizer
+        tuner.tokenizer.encode.return_value = [1, 2, 3]
+        tuner.tokenizer.decode.return_value = "Base model answer"
+        tuner.tokenizer.pad_token_id = 0
+
+        with patch.object(tuner.moe_system, "is_trained", return_value=False):
+            result = tuner.process_query("What was the revenue?")
+
+            # Should use base model, not MoE
+            self.assertIn("answer", result)
+            self.assertNotIn("expert_weights", result)
+
+    @patch("src.fine_tuning.fine_tuner.Trainer")
+    @patch("src.fine_tuning.fine_tuner.transformers_available", True)
+    def test_quick_fine_tune_with_moe(self, mock_trainer_class):
+        """Test quick fine-tuning with MoE training."""
+        # Mock trainer
+        mock_trainer_instance = MagicMock()
+        mock_trainer_class.return_value = mock_trainer_instance
+
+        qa_pairs = [
+            {
+                "question": "What was revenue?",
+                "answer": "$100M",
+                "section": "income_statement",
+            },
+            {
+                "question": "What was cash?",
+                "answer": "$50M",
+                "section": "balance_sheet",
+            },
+        ]
+
+        tuner = FineTuner(model_name="distilgpt2", use_moe=True)
+        tuner.tokenizer = MagicMock()
+        tuner.model = MagicMock()
+
+        # Mock MoE training
+        with patch.object(
+            tuner.moe_system, "train_moe", return_value={"status": "success"}
+        ):
+            result = tuner.quick_fine_tune(qa_pairs)
+
+            # Should train both base model and MoE
+            self.assertTrue(result)
+            mock_trainer_instance.train.assert_called_once()
+            tuner.moe_system.train_moe.assert_called_once_with(qa_pairs, epochs=1)
+
+    def test_moe_metadata_tracking(self):
+        """Test that MoE metadata is properly tracked."""
+        tuner = FineTuner(model_name="distilgpt2", use_moe=True)
+
+        # Mock MoE system with detailed metadata
+        mock_moe_result = {
+            "answer": "Test answer",
+            "confidence": 0.85,
+            "expert_weights": {
+                "income_statement": 0.6,
+                "balance_sheet": 0.3,
+                "cash_flow": 0.05,
+                "notes_mda": 0.05,
+            },
+            "selected_expert": "income_statement",
+            "moe_metadata": {
+                "routing_time": 0.005,
+                "generation_time": 0.15,
+                "total_time": 0.155,
+                "expert_confidence": 0.85,
+                "routing_method": "classifier",
+            },
+        }
+
+        with patch.object(
+            tuner.moe_system, "process_query", return_value=mock_moe_result
+        ):
+            with patch.object(tuner.moe_system, "is_trained", return_value=True):
+                result = tuner.process_query("Test question")
+
+                # Check detailed metadata
+                metadata = result["moe_metadata"]
+                self.assertIn("routing_time", metadata)
+                self.assertIn("generation_time", metadata)
+                self.assertIn("total_time", metadata)
+                self.assertIn("expert_confidence", metadata)
+                self.assertIn("routing_method", metadata)
+
+                # Check timing values are reasonable
+                self.assertGreater(metadata["routing_time"], 0)
+                self.assertGreater(metadata["generation_time"], 0)
+                self.assertGreater(metadata["total_time"], metadata["routing_time"])
+
+    @patch("src.fine_tuning.fine_tuner.transformers_available", False)
+    def test_moe_fallback_when_transformers_unavailable(self):
+        """Test MoE fallback when transformers is not available."""
+        tuner = FineTuner(model_name="distilgpt2", use_moe=True)
+
+        # Should still initialize but MoE won't be functional
+        self.assertIsNotNone(tuner.moe_system)
+
+        result = tuner.process_query("What was the revenue?")
+
+        # Should return fallback response
+        self.assertIsInstance(result, dict)
+        self.assertIn("answer", result)
+        self.assertEqual(result["confidence"], 0.0)
+
 
 if __name__ == "__main__":
     unittest.main()

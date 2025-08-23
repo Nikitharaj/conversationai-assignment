@@ -251,6 +251,153 @@ class TestIntegratedRAG(unittest.TestCase):
             self.assertIn("answer", result)
             self.assertIn("confidence", result)
 
+    def test_cross_encoder_integration(self):
+        """Test cross-encoder re-ranking integration."""
+        with patch("src.rag_system.integrated_rag.langchain_available", True):
+            rag = IntegratedRAG(
+                embedding_model="all-MiniLM-L6-v2",
+                llm_model="distilgpt2",
+                use_cross_encoder=True,
+            )
+
+            # Check that cross-encoder is initialized
+            self.assertIsNotNone(rag.cross_encoder_reranker)
+            self.assertTrue(rag.use_cross_encoder)
+
+    @patch("src.rag_system.document_chunker.DocumentChunker")
+    @patch("src.rag_system.embedding_manager.EmbeddingManager")
+    @patch("src.rag_system.answer_generator.AnswerGenerator")
+    def test_process_query_with_cross_encoder(
+        self, mock_answer_generator, mock_embedding_manager, mock_document_chunker
+    ):
+        """Test query processing with cross-encoder re-ranking."""
+        # Mock components
+        mock_chunker = MagicMock()
+        mock_document_chunker.return_value = mock_chunker
+
+        mock_embeddings = MagicMock()
+        mock_embedding_manager.return_value = mock_embeddings
+
+        # Mock retrieved chunks
+        mock_chunks = [
+            {
+                "content": "Revenue was $100M in 2023",
+                "metadata": {"id": "chunk1", "score": 0.8},
+                "score": 0.8,
+            },
+            {
+                "content": "Profit was $20M in 2023",
+                "metadata": {"id": "chunk2", "score": 0.7},
+                "score": 0.7,
+            },
+        ]
+        mock_embeddings.hybrid_search.return_value = mock_chunks
+
+        mock_generator = MagicMock()
+        mock_generator.generate_answer.return_value = {
+            "answer": "Revenue was $100M",
+            "confidence": 0.9,
+        }
+        mock_answer_generator.return_value = mock_generator
+
+        # Force langchain_available to be True for this test
+        with patch("src.rag_system.integrated_rag.langchain_available", True):
+            rag = IntegratedRAG(
+                embedding_model="all-MiniLM-L6-v2",
+                llm_model="distilgpt2",
+                use_cross_encoder=True,
+            )
+            rag.is_initialized = True
+
+            # Mock cross-encoder re-ranking
+            reranked_chunks = [
+                {
+                    "content": "Revenue was $100M in 2023",
+                    "metadata": {
+                        "id": "chunk1",
+                        "score": 0.8,
+                        "cross_encoder_score": 0.95,
+                        "reranked": True,
+                    },
+                    "score": 0.8,
+                }
+            ]
+            rerank_metadata = {
+                "method": "cross_encoder",
+                "rerank_time": 0.1,
+                "score_changes": {"improved": 1, "degraded": 0, "unchanged": 0},
+            }
+
+            with patch.object(
+                rag.cross_encoder_reranker,
+                "rerank_chunks",
+                return_value=(reranked_chunks, rerank_metadata),
+            ):
+                result = rag.process_query("What was the revenue?")
+
+                # Check that cross-encoder metadata is included
+                self.assertIn("rerank_metadata", result)
+                self.assertIn("cross_encoder_used", result)
+                self.assertTrue(result["cross_encoder_used"])
+                self.assertEqual(result["rerank_metadata"]["method"], "cross_encoder")
+
+    def test_cross_encoder_disabled(self):
+        """Test behavior when cross-encoder is disabled."""
+        with patch("src.rag_system.integrated_rag.langchain_available", True):
+            rag = IntegratedRAG(
+                embedding_model="all-MiniLM-L6-v2",
+                llm_model="distilgpt2",
+                use_cross_encoder=False,
+            )
+
+            # Cross-encoder should not be used
+            self.assertFalse(rag.use_cross_encoder)
+
+    @patch("src.rag_system.document_chunker.DocumentChunker")
+    @patch("src.rag_system.embedding_manager.EmbeddingManager")
+    @patch("src.rag_system.answer_generator.AnswerGenerator")
+    def test_retrieval_expansion_for_reranking(
+        self, mock_answer_generator, mock_embedding_manager, mock_document_chunker
+    ):
+        """Test that retrieval is expanded when cross-encoder is enabled."""
+        # Mock components
+        mock_chunker = MagicMock()
+        mock_document_chunker.return_value = mock_chunker
+
+        mock_embeddings = MagicMock()
+        mock_embedding_manager.return_value = mock_embeddings
+        mock_embeddings.hybrid_search.return_value = []
+
+        mock_generator = MagicMock()
+        mock_generator.generate_answer.return_value = {
+            "answer": "No answer",
+            "confidence": 0.1,
+        }
+        mock_answer_generator.return_value = mock_generator
+
+        with patch("src.rag_system.integrated_rag.langchain_available", True):
+            rag = IntegratedRAG(
+                embedding_model="all-MiniLM-L6-v2",
+                llm_model="distilgpt2",
+                top_k=4,
+                use_cross_encoder=True,
+            )
+            rag.is_initialized = True
+
+            # Mock cross-encoder
+            with patch.object(
+                rag.cross_encoder_reranker,
+                "rerank_chunks",
+                return_value=([], {"method": "cross_encoder"}),
+            ):
+                rag.process_query("Test query")
+
+                # Check that hybrid_search was called with expanded top_k
+                # Should be max(top_k * 3, 12) = max(4 * 3, 12) = 12
+                mock_embeddings.hybrid_search.assert_called_once()
+                call_args = mock_embeddings.hybrid_search.call_args
+                self.assertEqual(call_args[1]["top_k"], 12)
+
 
 if __name__ == "__main__":
     unittest.main()

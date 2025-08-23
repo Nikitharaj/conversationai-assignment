@@ -536,7 +536,7 @@ Answer:"""
 
         if not is_financial:
             return (
-                "I can only answer questions related to financial information in the provided documents.",
+                "I can only answer questions related to financial information. This question appears to be outside the scope of financial analysis.",
                 True,
             )
 

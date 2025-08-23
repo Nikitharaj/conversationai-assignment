@@ -100,7 +100,12 @@ class DocumentChunker:
                 )
 
     def _fallback_chunk_document(
-        self, text: str, chunk_size: int
+        self,
+        text: str,
+        chunk_size: int,
+        source_file: str = "unknown",
+        section: str = "unknown",
+        year: Optional[int] = None,
     ) -> List[Dict[str, Union[str, int]]]:
         """
         Fallback method for chunking when LangChain is not available.
@@ -128,13 +133,26 @@ class DocumentChunker:
             # Convert back to text
             chunk_text = " ".join(chunk_tokens)
 
-            # Store the chunk with metadata
+            # Generate unique chunk ID
+            chunk_id = f"{source_file}_{section}_{year or 'unknown'}_{chunk_size}_{len(chunks)}"
+
+            # Store the chunk with comprehensive metadata (Group 118)
             chunks.append(
                 {
+                    "id": chunk_id,  # Unique chunk identifier
                     "text": chunk_text,
                     "start_idx": start_idx,
                     "end_idx": end_idx - 1,
-                    "chunk_size": end_idx - start_idx,
+                    "token_count": end_idx - start_idx,  # Token count
+                    "chunk_size": end_idx - start_idx,  # Token count (keeping original)
+                    "char_count": len(chunk_text),  # Character count
+                    "chunk_index": len(chunks),
+                    # Group 118 required metadata
+                    "section": section,
+                    "year": year,
+                    "source_file": source_file,
+                    "chunk_method": "fallback_token_based",
+                    "target_chunk_size": chunk_size,
                 }
             )
 
@@ -144,17 +162,25 @@ class DocumentChunker:
         return chunks
 
     def chunk_document(
-        self, text: str, chunk_size: Optional[int] = None
+        self,
+        text: str,
+        chunk_size: Optional[int] = None,
+        source_file: str = "unknown",
+        section: str = "unknown",
+        year: Optional[int] = None,
     ) -> List[Dict[str, Union[str, int]]]:
         """
-        Split a document into chunks of approximately the specified token/character size.
+        Split a document into chunks with comprehensive metadata (Group 118 requirements).
 
         Args:
             text: Document text to chunk
             chunk_size: Target size of each chunk (uses default if not specified)
+            source_file: Name of the source file
+            section: Financial section (Income Statement, Balance Sheet, Cash Flow, Notes, MD&A)
+            year: Fiscal year of the document
 
         Returns:
-            List of dictionaries containing chunks and metadata
+            List of dictionaries containing chunks and comprehensive metadata
         """
         if chunk_size is None:
             chunk_size = self.default_chunk_size
@@ -180,12 +206,32 @@ class DocumentChunker:
                     start_idx = i * (chunk_size - self.chunk_overlap) if i > 0 else 0
                     end_idx = start_idx + len(doc.page_content.split())
 
+                    # Generate unique chunk ID
+                    chunk_id = (
+                        f"{source_file}_{section}_{year or 'unknown'}_{chunk_size}_{i}"
+                    )
+
                     chunks.append(
                         {
+                            "id": chunk_id,  # Unique chunk identifier
                             "text": doc.page_content,
                             "start_idx": start_idx,
                             "end_idx": end_idx - 1,
-                            "chunk_size": len(doc.page_content.split()),
+                            "token_count": len(
+                                doc.page_content.split()
+                            ),  # Approximate token count
+                            "chunk_size": len(
+                                doc.page_content.split()
+                            ),  # Token count (keeping original)
+                            "char_count": len(doc.page_content),  # Character count
+                            "chunk_index": i,
+                            "total_chunks": len(langchain_docs),
+                            # Group 118 required metadata
+                            "section": section,
+                            "year": year,
+                            "source_file": source_file,
+                            "chunk_method": f"langchain_{self.splitter_type}",
+                            "target_chunk_size": chunk_size,
                         }
                     )
 
@@ -194,10 +240,14 @@ class DocumentChunker:
                 warnings.warn(
                     f"Error using LangChain text splitter: {e}. Falling back to basic chunking."
                 )
-                return self._fallback_chunk_document(text, chunk_size)
+                return self._fallback_chunk_document(
+                    text, chunk_size, source_file, section, year
+                )
         else:
             # Use fallback method
-            return self._fallback_chunk_document(text, chunk_size)
+            return self._fallback_chunk_document(
+                text, chunk_size, source_file, section, year
+            )
 
     def chunk_document_by_section(
         self, sections: Dict[str, str], chunk_size: Optional[int] = None
