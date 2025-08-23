@@ -134,7 +134,7 @@ class SetupWizard:
             from pathlib import Path
 
             sys.path.append(str(Path(__file__).parent.parent.parent))
-            from src.rag_system.integrated_rag import IntegratedRAGSystem
+            from src.rag_system.integrated_rag import IntegratedRAG
 
             progress_bar = st.progress(0)
             status_text = st.empty()
@@ -143,7 +143,7 @@ class SetupWizard:
             status_text.text("Initializing RAG system...")
             progress_bar.progress(0.1)
 
-            rag_system = IntegratedRAGSystem()
+            rag_system = IntegratedRAG()
             progress_bar.progress(0.2)
 
             # Step 2: Load and process documents
@@ -152,7 +152,7 @@ class SetupWizard:
                 [
                     "sample_financial_report_2022.txt",
                     "sample_financial_report_2023.txt",
-                    "apple_Report.pdf",
+                    "apple_Report.txt",
                 ],
             )
 
@@ -163,7 +163,7 @@ class SetupWizard:
             documents = []
             for file_name in processed_files:
                 file_path = Path(f"data/processed/{file_name}")
-                if file_path.exists():
+                if file_path.exists() and file_name.endswith(".txt"):
                     try:
                         with open(file_path, "r", encoding="utf-8") as f:
                             content = f.read()
@@ -172,14 +172,25 @@ class SetupWizard:
                             )
                     except Exception as e:
                         st.warning(f"Could not load {file_name}: {e}")
+                elif not file_name.endswith(".txt"):
+                    st.info(f"Skipping non-text file: {file_name}")
 
             progress_bar.progress(0.5)
             status_text.text(f"Processing {len(documents)} documents...")
 
-            # Step 3: Initialize the RAG system with documents
+            # Step 3: Skip QA generation (user preference: no file creation)
+            status_text.text("Skipping QA pair generation (no file creation)...")
+            progress_bar.progress(0.6)
+            
+            st.info("📝 QA pair generation skipped to avoid creating files in data/qa_pairs/")
+
+            # Step 4: Initialize the RAG system with documents
             if documents:
-                rag_system.initialize_with_documents(documents)
-                progress_bar.progress(0.8)
+                progress_bar.progress(0.7)
+                status_text.text("Initializing RAG system...")
+
+                rag_system.initialize_from_documents("data/processed")
+                progress_bar.progress(0.9)
                 status_text.text("Building search indexes...")
 
                 # The system should now be ready
@@ -723,15 +734,29 @@ class SetupWizard:
                     )
 
                 with col2:
-                    training_data = st.selectbox(
-                        "Training Dataset",
-                        [
-                            "financial_qa_train.json",
-                            "comprehensive_qa_pairs.json",
-                            "all_qa_data.json",
-                        ],
-                        help="Training data for MoE experts",
-                    )
+                    # Get available QA files dynamically
+                    qa_dir = Path("data/qa_pairs")
+                    available_qa_files = []
+                    if qa_dir.exists():
+                        available_qa_files = [f.name for f in qa_dir.glob("*.json")]
+
+                    if not available_qa_files:
+                        st.warning(
+                            "⚠️ No QA training files found! You can either:"
+                        )
+                        st.info("1. Add existing QA JSON files to data/qa_pairs/ directory")
+                        st.info("2. Use the existing apple_10k_2024.json if available")
+                        st.info("3. Create your own QA training data in JSON format")
+                        training_data = None
+                    else:
+                        training_data = st.selectbox(
+                            "Training Dataset",
+                            available_qa_files,
+                            help="Training data for MoE experts (from existing files in data/qa_pairs/)",
+                        )
+                        st.info(
+                            f"📊 Found {len(available_qa_files)} training dataset(s)"
+                        )
 
                     epochs = st.slider(
                         "Training Epochs",
@@ -776,11 +801,31 @@ class SetupWizard:
                         help="Use ML-based routing with TF-IDF + Logistic Regression",
                     )
 
+                # Only enable training if training data is available
+                training_button_disabled = training_data is None
+
                 moe_submitted = st.form_submit_button(
-                    "Train MoE System", type="primary"
+                    "Train MoE System",
+                    type="primary",
+                    disabled=training_button_disabled,
+                    help="Start training the Mixture-of-Experts system"
+                    if not training_button_disabled
+                    else "No training data available - process documents first",
                 )
 
                 if moe_submitted:
+                    if training_data is None:
+                        st.error(
+                            "❌ Cannot start training: No training data available!"
+                        )
+                        st.info(
+                            "💡 Please add QA training files to data/qa_pairs/ directory first."
+                        )
+                        st.info(
+                            "📋 Training files should be in JSON format with 'question' and 'answer' fields."
+                        )
+                        return
+
                     # Save MoE configuration first
                     moe_config = {
                         "base_model": base_model,

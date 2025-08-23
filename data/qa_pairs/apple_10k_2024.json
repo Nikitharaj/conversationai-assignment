@@ -1,0 +1,867 @@
+[
+  {
+    "question": "What was the total net sales for the fiscal year ended September 28, 2024?",
+    "answer": "The total net sales for the fiscal year ended September 28, 2024, were $391,035 million.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the total net sales for the fiscal year 2023?",
+    "answer": "The total net sales for the fiscal year 2023 were $383,285 million.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "How did the total net sales in 2024 compare to 2023?",
+    "answer": "Total net sales increased by 2% from $383,285 million in 2023 to $391,035 million in 2024.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What were the net sales for Products in 2024?",
+    "answer": "Net sales for Products in 2024 were $294,866 million.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What were the net sales for Services in 2024?",
+    "answer": "Net sales for Services in 2024 were $96,169 million.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "How did Services net sales change from 2023 to 2024?",
+    "answer": "Services net sales increased by 13% from $85,200 million in 2023 to $96,169 million in 2024.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the net income for the fiscal year 2024?",
+    "answer": "The net income for the fiscal year 2024 was $93,736 million.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the net income for the fiscal year 2023?",
+    "answer": "The net income for the fiscal year 2023 was $96,995 million.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What were the diluted earnings per share for 2024?",
+    "answer": "The diluted earnings per share for 2024 were $6.08.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What were the total assets as of September 28, 2024?",
+    "answer": "The total assets as of September 28, 2024, were $364,980 million.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What were the total liabilities as of September 28, 2024?",
+    "answer": "The total liabilities as of September 28, 2024, were $308,030 million.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the total shareholders' equity as of September 28, 2024?",
+    "answer": "The total shareholders' equity as of September 28, 2024, was $56,950 million.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "How much cash and cash equivalents did the company have on September 28, 2024?",
+    "answer": "As of September 28, 2024, the company had $29,943 million in cash and cash equivalents.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the value of inventories on September 28, 2024?",
+    "answer": "The value of inventories on September 28, 2024, was $7,286 million.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What were the net sales for the iPhone category in 2024?",
+    "answer": "In 2024, iPhone net sales were $201,183 million, which was relatively flat compared to 2023.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "How did Mac net sales perform in 2024 compared to 2023?",
+    "answer": "Mac net sales increased by 2% to $29,984 million in 2024, up from $29,357 million in 2023, primarily due to higher net sales of laptops.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What were the iPad net sales in 2024?",
+    "answer": "iPad net sales decreased by 6% to $26,694 million in 2024 compared to 2023.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "How did the Wearables, Home and Accessories category perform in 2024?",
+    "answer": "Net sales for Wearables, Home and Accessories decreased by 7% to $37,005 million in 2024.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the total gross margin percentage in 2024?",
+    "answer": "The total gross margin percentage in 2024 was 46.2%, up from 44.1% in 2023.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the gross margin percentage for Products in 2024?",
+    "answer": "The gross margin percentage for Products in 2024 was 37.2%.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the gross margin percentage for Services in 2024?",
+    "answer": "The gross margin percentage for Services in 2024 was 73.9%.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "How much was spent on Research and Development (R&D) in 2024?",
+    "answer": "Research and development expenses were $31,370 million in 2024, a 5% increase from 2023.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What were the Selling, general and administrative expenses in 2024?",
+    "answer": "Selling, general and administrative expenses were $26,097 million in 2024, a 5% increase from 2023.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What were the net sales for the Americas region in 2024?",
+    "answer": "Net sales in the Americas region were $167,045 million in 2024, a 3% increase from 2023.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "How did the Europe segment perform in 2024?",
+    "answer": "Europe net sales increased by 7% to $101,328 million in 2024, primarily due to higher net sales of Services and iPhone.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What were the net sales in Greater China in 2024?",
+    "answer": "Greater China net sales decreased by 8% to $66,952 million in 2024 compared to 2023.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What were the net sales for the Japan segment in 2024?",
+    "answer": "Japan net sales increased by 3% to $25,052 million in 2024, primarily due to higher net sales of iPhone.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "How many full-time equivalent employees did the company have as of September 28, 2024?",
+    "answer": "As of September 28, 2024, the company had approximately 164,000 full-time equivalent employees.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the split between direct and indirect distribution channels for net sales in 2024?",
+    "answer": "During 2024, net sales through direct and indirect distribution channels accounted for 38% and 62%, respectively, of total net sales.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What is the period covered by this Form 10-K report?",
+    "answer": "This Form 10-K report covers the fiscal year ended September 28, 2024.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What is the company's principal executive office address?",
+    "answer": "The company's principal executive office is located at One Apple Park Way, Cupertino, California.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "How much did the company spend on share repurchases in 2024?",
+    "answer": "During 2024, the Company repurchased $95.0 billion of its common stock.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "How much did the company pay in dividends in 2024?",
+    "answer": "The company paid dividends and dividend equivalents of $15.2 billion in 2024.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the company's quarterly cash dividend per share as of September 28, 2024?",
+    "answer": "As of September 28, 2024, the company's quarterly cash dividend was $0.25 per share.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the company's effective tax rate for 2024?",
+    "answer": "The company's effective tax rate for 2024 was 24.1%.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the provision for income taxes in 2024?",
+    "answer": "The provision for income taxes in 2024 was $29,749 million.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the total amount of term debt as of September 28, 2024?",
+    "answer": "As of September 28, 2024, the company had total term debt (current and non-current) of $96,662 million.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What legal action did the U.S. Department of Justice take against the company in 2024?",
+    "answer": "On March 21, 2024, the U.S. Department of Justice filed a civil antitrust lawsuit against the company alleging monopolization or attempted monopolization in the smartphone markets.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the outcome of the European Commission's State Aid Decision appeal in 2024?",
+    "answer": "On September 10, 2024, the European Court of Justice set aside a lower court's judgment and confirmed the Commission's 2016 State Aid Decision, resulting in a one-time income tax charge of $10.2 billion for the company.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "How many shares of common stock were issued and outstanding as of October 18, 2024?",
+    "answer": "There were 15,115,823,000 shares of common stock issued and outstanding as of October 18, 2024.",
+    "source": "apple_10k_2024"
+  },
+    {
+    "question": "What was the total operating income for fiscal year 2024?",
+    "answer": "The total operating income for fiscal year 2024 was $123,216 million.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the total net sales for the fiscal year ended September 28, 2024?",
+    "answer": "The total net sales for the fiscal year ended September 28, 2024, were $391,035 million.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the total net sales for the fiscal year 2023?",
+    "answer": "The total net sales for the fiscal year 2023 were $383,285 million.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "How did the total net sales in 2024 compare to 2023?",
+    "answer": "Total net sales increased by 2% from $383,285 million in 2023 to $391,035 million in 2024.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What were the net sales for Products in 2024?",
+    "answer": "Net sales for Products in 2024 were $294,866 million.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What were the net sales for Services in 2024?",
+    "answer": "Net sales for Services in 2024 were $96,169 million.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "How did Services net sales change from 2023 to 2024?",
+    "answer": "Services net sales increased by 13% from $85,200 million in 2023 to $96,169 million in 2024.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the net income for the fiscal year 2024?",
+    "answer": "The net income for the fiscal year 2024 was $93,736 million.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the net income for the fiscal year 2023?",
+    "answer": "The net income for the fiscal year 2023 was $96,995 million.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What were the diluted earnings per share for 2024?",
+    "answer": "The diluted earnings per share for 2024 were $6.08.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What were the total assets as of September 28, 2024?",
+    "answer": "The total assets as of September 28, 2024, were $364,980 million.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What were the total liabilities as of September 28, 2024?",
+    "answer": "The total liabilities as of September 28, 2024, were $308,030 million.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the total shareholders' equity as of September 28, 2024?",
+    "answer": "The total shareholders' equity as of September 28, 2024, was $56,950 million.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "How much cash and cash equivalents did the company have on September 28, 2024?",
+    "answer": "As of September 28, 2024, the company had $29,943 million in cash and cash equivalents.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the value of inventories on September 28, 2024?",
+    "answer": "The value of inventories on September 28, 2024, was $7,286 million.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What were the net sales for the iPhone category in 2024?",
+    "answer": "In 2024, iPhone net sales were $201,183 million, which was relatively flat compared to 2023.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "How did Mac net sales perform in 2024 compared to 2023?",
+    "answer": "Mac net sales increased by 2% to $29,984 million in 2024, up from $29,357 million in 2023, primarily due to higher net sales of laptops.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What were the iPad net sales in 2024?",
+    "answer": "iPad net sales decreased by 6% to $26,694 million in 2024 compared to 2023.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "How did the Wearables, Home and Accessories category perform in 2024?",
+    "answer": "Net sales for Wearables, Home and Accessories decreased by 7% to $37,005 million in 2024.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the total gross margin percentage in 2024?",
+    "answer": "The total gross margin percentage in 2024 was 46.2%, up from 44.1% in 2023.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the gross margin percentage for Products in 2024?",
+    "answer": "The gross margin percentage for Products in 2024 was 37.2%.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the gross margin percentage for Services in 2024?",
+    "answer": "The gross margin percentage for Services in 2024 was 73.9%.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "How much was spent on Research and Development (R&D) in 2024?",
+    "answer": "Research and development expenses were $31,370 million in 2024, a 5% increase from 2023.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What were the Selling, general and administrative expenses in 2024?",
+    "answer": "Selling, general and administrative expenses were $26,097 million in 2024, a 5% increase from 2023.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What were the net sales for the Americas region in 2024?",
+    "answer": "Net sales in the Americas region were $167,045 million in 2024, a 3% increase from 2023.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "How did the Europe segment perform in 2024?",
+    "answer": "Europe net sales increased by 7% to $101,328 million in 2024, primarily due to higher net sales of Services and iPhone.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What were the net sales in Greater China in 2024?",
+    "answer": "Greater China net sales decreased by 8% to $66,952 million in 2024 compared to 2023.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What were the net sales for the Japan segment in 2024?",
+    "answer": "Japan net sales increased by 3% to $25,052 million in 2024, primarily due to higher net sales of iPhone.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "How many full-time equivalent employees did the company have as of September 28, 2024?",
+    "answer": "As of September 28, 2024, the company had approximately 164,000 full-time equivalent employees.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the split between direct and indirect distribution channels for net sales in 2024?",
+    "answer": "During 2024, net sales through direct and indirect distribution channels accounted for 38% and 62%, respectively, of total net sales.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What is the period covered by this Form 10-K report?",
+    "answer": "This Form 10-K report covers the fiscal year ended September 28, 2024.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What is the company's principal executive office address?",
+    "answer": "The company's principal executive office is located at One Apple Park Way, Cupertino, California.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "How much did the company spend on share repurchases in 2024?",
+    "answer": "During 2024, the Company repurchased $95.0 billion of its common stock.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "How much did the company pay in dividends in 2024?",
+    "answer": "The company paid dividends and dividend equivalents of $15.2 billion in 2024.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the company's quarterly cash dividend per share as of September 28, 2024?",
+    "answer": "As of September 28, 2024, the company's quarterly cash dividend was $0.25 per share.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the company's effective tax rate for 2024?",
+    "answer": "The company's effective tax rate for 2024 was 24.1%.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the provision for income taxes in 2024?",
+    "answer": "The provision for income taxes in 2024 was $29,749 million.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the total amount of term debt as of September 28, 2024?",
+    "answer": "As of September 28, 2024, the company had total term debt (current and non-current) of $96,662 million.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What legal action did the U.S. Department of Justice take against the company in 2024?",
+    "answer": "On March 21, 2024, the U.S. Department of Justice filed a civil antitrust lawsuit against the company alleging monopolization or attempted monopolization in the smartphone markets.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the outcome of the European Commission's State Aid Decision appeal in 2024?",
+    "answer": "On September 10, 2024, the European Court of Justice set aside a lower court's judgment and confirmed the Commission's 2016 State Aid Decision, resulting in a one-time income tax charge of $10.2 billion for the company.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "How many shares of common stock were issued and outstanding as of October 18, 2024?",
+    "answer": "There were 15,115,823,000 shares of common stock issued and outstanding as of October 18, 2024.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the total operating income for fiscal year 2024?",
+    "answer": "The total operating income for fiscal year 2024 was $123,216 million.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "How much cash was generated by operating activities in 2024?",
+    "answer": "In fiscal year 2024, cash generated by operating activities was $118,254 million.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "How does the cash from operating activities in 2024 compare to 2023?",
+    "answer": "Cash from operating activities increased from $110,543 million in 2023 to $118,254 million in 2024.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What were the payments for acquisition of property, plant and equipment in 2024?",
+    "answer": "Payments for the acquisition of property, plant and equipment were $9,447 million in 2024.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the total amount of accounts payable as of September 28, 2024?",
+    "answer": "As of September 28, 2024, accounts payable were $68,960 million.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "How much commercial paper was outstanding as of September 28, 2024?",
+    "answer": "As of September 28, 2024, the company had $9,967 million of commercial paper outstanding.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the dividend declared per share in fiscal year 2024?",
+    "answer": "The dividends and dividend equivalents declared per share or RSU in fiscal year 2024 were $0.98.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What were the net sales in the U.S. for 2024?",
+    "answer": "Net sales in the U.S. for 2024 were $142,196 million.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the value of long-lived assets in the U.S. as of September 28, 2024?",
+    "answer": "As of September 28, 2024, the value of long-lived assets in the U.S. was $35,664 million.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the primary driver for the increase in Services net sales in 2024?",
+    "answer": "The increase in Services net sales in 2024 was primarily due to higher net sales from advertising, the App Store, and cloud services.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the main reason for the growth in R&D expense in 2024?",
+    "answer": "The growth in R&D expense during 2024 was driven primarily by increases in headcount-related expenses.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What are the company's main product categories?",
+    "answer": "The company's main product categories are iPhone, Mac, iPad, and Wearables, Home and Accessories.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What types of services does the company offer?",
+    "answer": "The company offers a variety of services including Advertising, AppleCare, Cloud Services, Digital Content (like the App Store, Apple Music, and Apple TV+), and Payment Services (like Apple Card and Apple Pay).",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What are the company's reportable geographic segments?",
+    "answer": "The company's reportable segments are Americas, Europe, Greater China, Japan, and Rest of Asia Pacific.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "Where are the company's manufacturing partners primarily located?",
+    "answer": "Substantially all of the company's hardware products are manufactured by outsourcing partners located primarily in China mainland, India, Japan, South Korea, Taiwan and Vietnam.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "When does the company typically experience its highest net sales?",
+    "answer": "The company has historically experienced higher net sales in its first quarter compared to other quarters, due in part to seasonal holiday demand.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "Who is responsible for overseeing cybersecurity matters at the board level?",
+    "answer": "The Audit and Finance Committee of the Board assists the Board in the oversight and monitoring of cybersecurity matters.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "How many shares did the company repurchase in fiscal year 2024?",
+    "answer": "During 2024, the Company repurchased 499 million shares of its common stock.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the total unrecognized compensation cost related to RSUs as of September 28, 2024?",
+    "answer": "As of September 28, 2024, the total unrecognized compensation cost related to outstanding RSUs was $19.4 billion.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the total net sales for the fiscal year ended September 28, 2024?",
+    "answer": "The total net sales for the fiscal year ended September 28, 2024, were $391,035 million.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the total net sales for the fiscal year 2023?",
+    "answer": "The total net sales for the fiscal year 2023 were $383,285 million.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "How did the total net sales in 2024 compare to 2023?",
+    "answer": "Total net sales increased by 2% from $383,285 million in 2023 to $391,035 million in 2024.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What were the net sales for Products in 2024?",
+    "answer": "Net sales for Products in 2024 were $294,866 million.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What were the net sales for Services in 2024?",
+    "answer": "Net sales for Services in 2024 were $96,169 million.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "How did Services net sales change from 2023 to 2024?",
+    "answer": "Services net sales increased by 13% from $85,200 million in 2023 to $96,169 million in 2024.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the net income for the fiscal year 2024?",
+    "answer": "The net income for the fiscal year 2024 was $93,736 million.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the net income for the fiscal year 2023?",
+    "answer": "The net income for the fiscal year 2023 was $96,995 million.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What were the diluted earnings per share for 2024?",
+    "answer": "The diluted earnings per share for 2024 were $6.08.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What were the total assets as of September 28, 2024?",
+    "answer": "The total assets as of September 28, 2024, were $364,980 million.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What were the total liabilities as of September 28, 2024?",
+    "answer": "The total liabilities as of September 28, 2024, were $308,030 million.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the total shareholders' equity as of September 28, 2024?",
+    "answer": "The total shareholders' equity as of September 28, 2024, was $56,950 million.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "How much cash and cash equivalents did the company have on September 28, 2024?",
+    "answer": "As of September 28, 2024, the company had $29,943 million in cash and cash equivalents.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the value of inventories on September 28, 2024?",
+    "answer": "The value of inventories on September 28, 2024, was $7,286 million.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What were the net sales for the iPhone category in 2024?",
+    "answer": "In 2024, iPhone net sales were $201,183 million, which was relatively flat compared to 2023.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "How did Mac net sales perform in 2024 compared to 2023?",
+    "answer": "Mac net sales increased by 2% to $29,984 million in 2024, up from $29,357 million in 2023, primarily due to higher net sales of laptops.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What were the iPad net sales in 2024?",
+    "answer": "iPad net sales decreased by 6% to $26,694 million in 2024 compared to 2023.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "How did the Wearables, Home and Accessories category perform in 2024?",
+    "answer": "Net sales for Wearables, Home and Accessories decreased by 7% to $37,005 million in 2024.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the total gross margin percentage in 2024?",
+    "answer": "The total gross margin percentage in 2024 was 46.2%, up from 44.1% in 2023.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the gross margin percentage for Products in 2024?",
+    "answer": "The gross margin percentage for Products in 2024 was 37.2%.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the gross margin percentage for Services in 2024?",
+    "answer": "The gross margin percentage for Services in 2024 was 73.9%.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "How much was spent on Research and Development (R&D) in 2024?",
+    "answer": "Research and development expenses were $31,370 million in 2024, a 5% increase from 2023.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What were the Selling, general and administrative expenses in 2024?",
+    "answer": "Selling, general and administrative expenses were $26,097 million in 2024, a 5% increase from 2023.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What were the net sales for the Americas region in 2024?",
+    "answer": "Net sales in the Americas region were $167,045 million in 2024, a 3% increase from 2023.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "How did the Europe segment perform in 2024?",
+    "answer": "Europe net sales increased by 7% to $101,328 million in 2024, primarily due to higher net sales of Services and iPhone.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What were the net sales in Greater China in 2024?",
+    "answer": "Greater China net sales decreased by 8% to $66,952 million in 2024 compared to 2023.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What were the net sales for the Japan segment in 2024?",
+    "answer": "Japan net sales increased by 3% to $25,052 million in 2024, primarily due to higher net sales of iPhone.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "How many full-time equivalent employees did the company have as of September 28, 2024?",
+    "answer": "As of September 28, 2024, the company had approximately 164,000 full-time equivalent employees.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the split between direct and indirect distribution channels for net sales in 2024?",
+    "answer": "During 2024, net sales through direct and indirect distribution channels accounted for 38% and 62%, respectively, of total net sales.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What is the period covered by this Form 10-K report?",
+    "answer": "This Form 10-K report covers the fiscal year ended September 28, 2024.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What is the company's principal executive office address?",
+    "answer": "The company's principal executive office is located at One Apple Park Way, Cupertino, California.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "How much did the company spend on share repurchases in 2024?",
+    "answer": "During 2024, the Company repurchased $95.0 billion of its common stock.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "How much did the company pay in dividends in 2024?",
+    "answer": "The company paid dividends and dividend equivalents of $15.2 billion in 2024.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the company's quarterly cash dividend per share as of September 28, 2024?",
+    "answer": "As of September 28, 2024, the company's quarterly cash dividend was $0.25 per share.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the company's effective tax rate for 2024?",
+    "answer": "The company's effective tax rate for 2024 was 24.1%.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the provision for income taxes in 2024?",
+    "answer": "The provision for income taxes in 2024 was $29,749 million.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the total amount of term debt as of September 28, 2024?",
+    "answer": "As of September 28, 2024, the company had total term debt (current and non-current) of $96,662 million.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What legal action did the U.S. Department of Justice take against the company in 2024?",
+    "answer": "On March 21, 2024, the U.S. Department of Justice filed a civil antitrust lawsuit against the company alleging monopolization or attempted monopolization in the smartphone markets.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the outcome of the European Commission's State Aid Decision appeal in 2024?",
+    "answer": "On September 10, 2024, the European Court of Justice set aside a lower court's judgment and confirmed the Commission's 2016 State Aid Decision, resulting in a one-time income tax charge of $10.2 billion for the company.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "How many shares of common stock were issued and outstanding as of October 18, 2024?",
+    "answer": "There were 15,115,823,000 shares of common stock issued and outstanding as of October 18, 2024.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the total operating income for fiscal year 2024?",
+    "answer": "The total operating income for fiscal year 2024 was $123,216 million.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "How much cash was generated by operating activities in 2024?",
+    "answer": "In fiscal year 2024, cash generated by operating activities was $118,254 million.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "How does the cash from operating activities in 2024 compare to 2023?",
+    "answer": "Cash from operating activities increased from $110,543 million in 2023 to $118,254 million in 2024.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What were the payments for acquisition of property, plant and equipment in 2024?",
+    "answer": "Payments for the acquisition of property, plant and equipment were $9,447 million in 2024.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the total amount of accounts payable as of September 28, 2024?",
+    "answer": "As of September 28, 2024, accounts payable were $68,960 million.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "How much commercial paper was outstanding as of September 28, 2024?",
+    "answer": "As of September 28, 2024, the company had $9,967 million of commercial paper outstanding.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the dividend declared per share in fiscal year 2024?",
+    "answer": "The dividends and dividend equivalents declared per share or RSU in fiscal year 2024 were $0.98.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What were the net sales in the U.S. for 2024?",
+    "answer": "Net sales in the U.S. for 2024 were $142,196 million.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the value of long-lived assets in the U.S. as of September 28, 2024?",
+    "answer": "As of September 28, 2024, the value of long-lived assets in the U.S. was $35,664 million.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the primary driver for the increase in Services net sales in 2024?",
+    "answer": "The increase in Services net sales in 2024 was primarily due to higher net sales from advertising, the App Store, and cloud services.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the main reason for the growth in R&D expense in 2024?",
+    "answer": "The growth in R&D expense during 2024 was driven primarily by increases in headcount-related expenses.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What are the company's main product categories?",
+    "answer": "The company's main product categories are iPhone, Mac, iPad, and Wearables, Home and Accessories.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What types of services does the company offer?",
+    "answer": "The company offers a variety of services including Advertising, AppleCare, Cloud Services, Digital Content (like the App Store, Apple Music, and Apple TV+), and Payment Services (like Apple Card and Apple Pay).",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What are the company's reportable geographic segments?",
+    "answer": "The company's reportable segments are Americas, Europe, Greater China, Japan, and Rest of Asia Pacific.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "Where are the company's manufacturing partners primarily located?",
+    "answer": "Substantially all of the company's hardware products are manufactured by outsourcing partners located primarily in China mainland, India, Japan, South Korea, Taiwan and Vietnam.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "When does the company typically experience its highest net sales?",
+    "answer": "The company has historically experienced higher net sales in its first quarter compared to other quarters, due in part to seasonal holiday demand.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "Who is responsible for overseeing cybersecurity matters at the board level?",
+    "answer": "The Audit and Finance Committee of the Board assists the Board in the oversight and monitoring of cybersecurity matters.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "How many shares did the company repurchase in fiscal year 2024?",
+    "answer": "During 2024, the Company repurchased 499 million shares of its common stock.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the total unrecognized compensation cost related to RSUs as of September 28, 2024?",
+    "answer": "As of September 28, 2024, the total unrecognized compensation cost related to outstanding RSUs was $19.4 billion.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What is the company's fiscal year structure?",
+    "answer": "The company's fiscal year is the 52 or 53-week period that ends on the last Saturday of September.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the value of property, plant and equipment, net, on the balance sheet for 2024?",
+    "answer": "As of September 28, 2024, the net value of property, plant and equipment was $45,680 million.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What were the total lease costs associated with variable payments in 2024?",
+    "answer": "Lease costs associated with variable payments on the company's leases were $13.8 billion for 2024.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the weighted-average interest rate on commercial paper as of September 28, 2024?",
+    "answer": "The weighted-average interest rate of the company's commercial paper was 5.00% as of September 28, 2024.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the depreciation expense on property, plant and equipment during 2024?",
+    "answer": "Depreciation expense on property, plant and equipment was $8.2 billion during 2024.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What percentage of total vendor non-trade receivables did the top two vendors represent as of September 28, 2024?",
+    "answer": "As of September 28, 2024, two vendors individually represented 44% and 23% of total vendor non-trade receivables.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "How many Restricted Stock Units (RSUs) were granted by the company in fiscal year 2024?",
+    "answer": "In fiscal year 2024, the company granted 80,456 thousand (or 80.456 million) RSUs.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the total value of the company's manufacturing purchase obligations as of September 28, 2024?",
+    "answer": "As of September 28, 2024, the company had manufacturing purchase obligations of $53.0 billion.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "How much of the manufacturing purchase obligations are payable within 12 months from September 28, 2024?",
+    "answer": "$52.9 billion of the $53.0 billion in manufacturing purchase obligations were payable within 12 months.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the operating income for the Rest of Asia Pacific segment in 2024?",
+    "answer": "The operating income for the Rest of Asia Pacific segment in 2024 was $13,062 million.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the operating income for the Greater China segment in 2024?",
+    "answer": "The operating income for the Greater China segment in 2024 was $27,082 million.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What is the trading symbol for the company's common stock?",
+    "answer": "The company's common stock is traded on The Nasdaq Stock Market LLC under the symbol AAPL.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "How many shareholders of record did the company have as of October 18, 2024?",
+    "answer": "As of October 18, 2024, there were 23,301 shareholders of record.",
+    "source": "apple_10k_2024"
+  },
+  {
+    "question": "What was the company's total comprehensive income in 2024?",
+    "answer": "The total comprehensive income in fiscal year 2024 was $98,016 million.",
+    "source": "apple_10k_2024"
+  }
+]
