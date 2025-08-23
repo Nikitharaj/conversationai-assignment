@@ -39,10 +39,10 @@ def clear_streamlit_cache():
         for key in cache_keys:
             del st.session_state[key]
 
-        print("✅ Streamlit cache cleared successfully")
+        print("Streamlit cache cleared successfully")
 
     except Exception as e:
-        print(f"⚠️ Cache clearing failed (non-critical): {e}")
+        print(f"Cache clearing failed (non-critical): {e}")
 
 
 # Clear cache on app startup to prevent stale state
@@ -689,12 +689,12 @@ with st.sidebar:
     st.markdown("---")
     st.markdown("**System Management:**")
 
-    if st.button("🔄 Clear Cache & Refresh"):
+    if st.button(" Clear Cache & Refresh"):
         clear_streamlit_cache()
         st.success("Cache cleared! Refreshing...")
         st.rerun()
 
-    if st.button("💾 Force Status Refresh"):
+    if st.button(" Force Status Refresh"):
         # Force refresh of MoE status
         if st.session_state.get("ft_model") and hasattr(
             st.session_state.ft_model, "moe_system"

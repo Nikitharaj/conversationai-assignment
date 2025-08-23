@@ -137,20 +137,13 @@ class AnswerGenerator:
 
                     print(f"Initializing model: {self.model_name}")
 
-                    # Use a try-except block with a timeout to prevent hanging
-                    import signal
-
-                    def timeout_handler(signum, frame):
-                        raise TimeoutError("Model loading timed out")
-
-                    # Set a timeout of 30 seconds for model loading
-                    signal.signal(signal.SIGALRM, timeout_handler)
-                    signal.alarm(30)
-
+                    # Load model without signal-based timeout (not compatible with Streamlit threading)
                     try:
+                        print(f"Loading tokenizer for {self.model_name}...")
                         # Load tokenizer
                         tokenizer = AutoTokenizer.from_pretrained(self.model_name)
 
+                        print(f"Loading model {self.model_name}...")
                         # Load model with memory-efficient settings
                         model = AutoModelForCausalLM.from_pretrained(
                             self.model_name,
@@ -160,11 +153,9 @@ class AnswerGenerator:
                             else None,
                         )
 
-                        # Cancel the timeout
-                        signal.alarm(0)
-
                         # Set device to CPU explicitly to avoid GPU memory issues
                         device = -1  # Always use CPU
+                        print("Device set to use cpu")
 
                         # Set up generation pipeline with better parameters
                         text_gen_pipeline = pipeline(
@@ -184,13 +175,12 @@ class AnswerGenerator:
                         self.llm = HuggingFacePipeline(pipeline=text_gen_pipeline)
                         print(f"Model {self.model_name} loaded successfully")
 
-                    except TimeoutError as te:
-                        warnings.warn(f"Model loading timed out: {te}")
-                        print("Using fallback text generation due to timeout")
-
-                    finally:
-                        # Reset the alarm in case of any exception
-                        signal.alarm(0)
+                    except Exception as model_error:
+                        warnings.warn(f"Model loading failed: {model_error}")
+                        print(
+                            "Using fallback text generation due to model loading error"
+                        )
+                        print(f"Error details: {model_error}")
 
                 except Exception as e:
                     warnings.warn(f"Error loading model: {e}")
@@ -255,6 +245,14 @@ Answer:"""
 
         # Combine chunks
         combined_context = "\n\n".join(chunk_texts)
+
+        # Limit context length to prevent token overflow (max 800 tokens for context, leaving room for question)
+        max_context_chars = 3200  # Approximately 800 tokens (4 chars per token average)
+        if len(combined_context) > max_context_chars:
+            combined_context = combined_context[:max_context_chars] + "..."
+            print(
+                f"Context truncated to {max_context_chars} characters to prevent token overflow"
+            )
 
         return combined_context
 

@@ -181,8 +181,10 @@ class SetupWizard:
             # Step 3: Skip QA generation (user preference: no file creation)
             status_text.text("Skipping QA pair generation (no file creation)...")
             progress_bar.progress(0.6)
-            
-            st.info("📝 QA pair generation skipped to avoid creating files in data/qa_pairs/")
+
+            st.info(
+                "📝 QA pair generation skipped to avoid creating files in data/qa_pairs/"
+            )
 
             # Step 4: Initialize the RAG system with documents
             if documents:
@@ -734,17 +736,19 @@ class SetupWizard:
                     )
 
                 with col2:
-                    # Get available QA files dynamically
+                    # Get available QA files dynamically (sorted alphabetically)
                     qa_dir = Path("data/qa_pairs")
                     available_qa_files = []
                     if qa_dir.exists():
-                        available_qa_files = [f.name for f in qa_dir.glob("*.json")]
+                        available_qa_files = sorted(
+                            [f.name for f in qa_dir.glob("*.json")]
+                        )
 
                     if not available_qa_files:
-                        st.warning(
-                            "⚠️ No QA training files found! You can either:"
+                        st.warning("⚠️ No QA training files found! You can either:")
+                        st.info(
+                            "1. Add existing QA JSON files to data/qa_pairs/ directory"
                         )
-                        st.info("1. Add existing QA JSON files to data/qa_pairs/ directory")
                         st.info("2. Use the existing apple_10k_2024.json if available")
                         st.info("3. Create your own QA training data in JSON format")
                         training_data = None

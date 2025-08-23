@@ -1,57 +1,62 @@
 [
   {
-    "question": "How did iPhone sales perform in 2023?",
-    "answer": "iPhone revenue was $200.6 billion in fiscal 2023, representing 52% of total revenue.",
-    "source": "manual_apple"
+    "question": "What was Apple's total net sales for fiscal year 2023?",
+    "answer": "Apple's total net sales for fiscal year 2023 were $383.3 billion."
   },
   {
-    "question": "What was Apple's accounts receivable in 2023?",
-    "answer": "Apple's accounts receivable reflects its strong customer payment terms and business relationships.",
-    "source": "manual_apple"
+    "question": "What was the revenue growth rate in 2023?",
+    "answer": "Apple's revenue declined by approximately 2.8% in fiscal 2023 compared to fiscal 2022."
   },
   {
-    "question": "What was Apple's Services revenue growth in 2023?",
-    "answer": "Apple's Services revenue grew to $85.2 billion in fiscal 2023, up 8.2% year-over-year.",
-    "source": "manual_apple"
+    "question": "How much did Apple spend on research and development?",
+    "answer": "Apple spent $29.9 billion on research and development in fiscal 2023."
   },
   {
-    "question": "What was Apple's net income in fiscal 2023?",
-    "answer": "Apple reported net income of $97.0 billion for fiscal year 2023.",
-    "source": "manual_apple"
+    "question": "What was Apple's gross margin in 2023?",
+    "answer": "Apple's gross margin was 44.1% in fiscal 2023."
   },
   {
-    "question": "What was the Mac revenue performance in 2023?",
-    "answer": "Mac revenue was $29.4 billion in fiscal 2023, down 27% compared to the previous year.",
-    "source": "manual_apple"
+    "question": "What are Apple's main product segments?",
+    "answer": "Apple's main product segments include iPhone, Mac, iPad, Wearables/Home/Accessories, and Services."
   },
   {
-    "question": "How did iPad sales perform in fiscal 2023?",
-    "answer": "iPad revenue was $28.3 billion in fiscal 2023, down 3% year-over-year.",
-    "source": "manual_apple"
+    "question": "What was Apple's cash and cash equivalents?",
+    "answer": "Apple had $29.5 billion in cash and cash equivalents as of September 30, 2023."
   },
   {
-    "question": "What was Apple's effective tax rate in fiscal 2023?",
-    "answer": "Apple's effective tax rate was approximately 14.7% for fiscal year 2023.",
-    "source": "manual_apple"
+    "question": "How much did Apple return to shareholders?",
+    "answer": "Apple returned approximately $99.9 billion to shareholders through dividends and share repurchases in fiscal 2023."
   },
   {
-    "question": "What was Apple's average selling price for iPhone in 2023?",
-    "answer": "iPhone maintained strong average selling prices despite competitive pressures, reflecting premium positioning.",
-    "source": "manual_apple"
+    "question": "What was Apple's operating income?",
+    "answer": "Apple's operating income was $114.3 billion in fiscal 2023."
   },
   {
-    "question": "What was the net income/profit reported?",
-    "answer": "The net income/profit was $187.5.",
-    "source": "profit_pattern"
+    "question": "What are Apple's geographic revenue segments?",
+    "answer": "Apple's geographic segments include Americas, Europe, Greater China, Japan, and Rest of Asia Pacific."
   },
   {
-    "question": "What are Apple's main revenue segments?",
-    "answer": "Apple's main revenue segments are iPhone, Services, Mac, iPad, and Wearables, Home and Accessories.",
-    "source": "manual_apple"
+    "question": "What was Apple's effective tax rate?",
+    "answer": "Apple's effective tax rate was approximately 14.7% in fiscal 2023."
   },
   {
-    "question": "What was Apple's EBITDA in fiscal 2023?",
-    "answer": "Apple's strong operational performance generated substantial EBITDA of over $130 billion in fiscal 2023.",
-    "source": "manual_apple"
+    "question": "How many employees does Apple have?",
+    "answer": "Apple had approximately 161,000 full-time equivalent employees as of September 30, 2023."
+  },
+  {
+    "question": "What was Apple's iPhone revenue?",
+    "answer": "iPhone revenue was $200.6 billion in fiscal 2023, representing the largest product segment."
+  },
+  {
+    "question": "What challenges does Apple face in emerging markets?",
+    "answer": "Apple faces regulatory challenges, currency fluctuations, and competitive pressures in emerging markets."
+  },
+  {
+    "question": "What is Apple's dividend policy?",
+    "answer": "Apple pays quarterly dividends and has consistently increased its dividend over recent years."
+  },
+  {
+    "question": "What are Apple's key financial ratios?",
+    "answer": "Key ratios include gross margin of 44.1%, operating margin of 29.8%, and strong return on equity."
   }
 ]
