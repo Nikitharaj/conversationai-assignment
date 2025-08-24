@@ -46,9 +46,9 @@ venv.bak/
 
 # Project specific
 # data/raw/
-data/processed/
-data/chunks/
-models/
+!data/processed/
+!data/chunks/
+!models/
 logs/
 *.faiss
 *.pkl

@@ -1,0 +1,14 @@
+{
+  "model_name": "distilgpt2",
+  "expert_sections": [
+    "income_statement",
+    "balance_sheet",
+    "cash_flow",
+    "notes_mda"
+  ],
+  "lora_rank": 8,
+  "lora_alpha": 32,
+  "lora_dropout": 0.1,
+  "is_trained": true,
+  "num_experts": 4
+}
