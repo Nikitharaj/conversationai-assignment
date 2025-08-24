@@ -65,7 +65,7 @@ logs/
 .vectorstore/
 
 # Streamlit
-.streamlit/
+!.streamlit/
 
 # Misc
 .coverage
