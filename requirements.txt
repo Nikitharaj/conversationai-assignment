@@ -23,7 +23,7 @@ langchain-openai==0.0.8
 langsmith==0.1.146
 openai==1.101.0
 pydantic==2.7.4
-pydantic-core==2.14.5
+pydantic-core==2.18.4
 jsonpatch==1.33
 marshmallow==3.26.1
 dataclasses-json==0.6.7
